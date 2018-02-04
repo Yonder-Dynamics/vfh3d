@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>vfh-rover</name>
+  <name>vfh_rover</name>
   <version>0.0.0</version>
-  <description>The vfh-rover package</description>
+  <description>The vfh_rover package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -50,7 +50,13 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>octomap</build_depend>
+  <build_depend>octomap_msgs</build_depend>  
+  <build_depend>octomap_ros</build_depend>
   <build_export_depend>roscpp</build_export_depend>
+  <exec_depend>octomap</exec_depend>
+  <exec_depend>octomap_msgs</exec_depend>
+  <exec_depend>octomap_ros</exec_depend>
   <exec_depend>roscpp</exec_depend>
 
 
