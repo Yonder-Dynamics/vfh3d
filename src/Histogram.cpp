@@ -1,4 +1,4 @@
-#include <vfh-rover/Histogram.h>
+#include <vfh_rover/Histogram.h>
 
 void Histogram::addValue(float azimuth, float elevation) {
 }
