@@ -1,5 +1,9 @@
+<<<<<<< HEAD
+#include <vfh-rover/Histogram.h>
 #include <math.h>
+=======
 #include <vfh_rover/Histogram.h>
+>>>>>>> 84b14ff9a0d853388c1c14b1494f75f94d43c38f
 
 float Histogram::getValue(int x, int y) {
   return this->data[(y*getWidth())+x]; 

@@ -1,0 +1,4 @@
+<launch>
+  <node name="test_octomap" pkg="octomap_server" type="octomap_server_node" args="$(find vfh_rover)/fr_079.bt"/>
+  <node name="vfh" pkg="vfh_rover" type="vfh_rover_node"/>
+</launch>

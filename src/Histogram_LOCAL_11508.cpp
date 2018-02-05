@@ -1,5 +1,5 @@
+#include <vfh-rover/Histogram.h>
 #include <math.h>
-#include <vfh_rover/Histogram.h>
 
 float Histogram::getValue(int x, int y) {
   return this->data[(y*getWidth())+x]; 
