@@ -1,20 +1,26 @@
 class Histogram {
  public:
   /** Constructor with width and height parameters **/
-  Histogram(float alpha): alpha(alpha){
+  Histogram(float alpha, float ox, float oy, float oz): alpha(alpha), ox(ox), oy(oy), oz(oz) {
     data = new float[getWidth() * getHeight()];
   }
-  float getValue(int x, int y);
-  void addValue(int x, int y, float val);
-  int calcAzimuth(float alpha, float xi, float xo, float yi, float yo);
-  int calcElevation(float alpha, float zi, float zo, float xi, float xo, float yi, float yo);
-  bool isIgnored(float xi, float yi, float zi, float xo, float yo, float zo, float ws);
-  void setValue(int x, int y, float val);
+
+  int calcAzimuth(float x, float y);
+  int calcElevation(float x, float y, float z);
+  bool isIgnored(float x, float y, float z, float ws);
+
   int getWidth();
   int getHeight();
   float getAlpha();
+
+  // For processing histogram
+  float getValue(int az, int el);
+  void setValue(int az, int el, float val);
+  // For filling histogram
+  void addValue(int x, int y, int z, float val);
+
  private:
   float* data;
-  float alpha;
+  float alpha, ox, oy, oz;
 
 };
