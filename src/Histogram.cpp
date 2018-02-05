@@ -2,18 +2,18 @@
 #include <vfh_rover/Histogram.h>
 
 float Histogram::getValue(int x, int y) {
-  return this->data[(y*getWidth())+x]; 
+  return this->data[(y*getWidth())+x];
 }
 
 void Histogram::setValue(int x, int y, float val) {
   this->data[(y*getWidth())+x] = val;
 }
 
-void Histogram::addValue(int azimuth, int elevation, float val) { 
+void Histogram::addValue(int x, int y, float val) {
   this->data[(y*getWidth())+x] += val;
 }
 
-int Histogram::calcAzimuth(float alpha, float xi, float xo, float yi, float, yo) {
+int Histogram::calcAzimuth(float alpha, float xi, float xo, float yi, float yo) {
   return (int)((1/alpha)*(atan((xi-xo)/yi-yo)));
 }
 
