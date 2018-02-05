@@ -1,29 +1,31 @@
 #include <math.h>
 #include <vfh_rover/Histogram.h>
 
-float Histogram::getValue(int x, int y) {
-  return this->data[(y*getWidth())+x];
+float Histogram::getValue(int az, int el) {
+  return this->data[(el*getWidth())+x];
 }
 
-void Histogram::setValue(int x, int y, float val) {
+void Histogram::setValue(int az, int el, float val) {
   this->data[(y*getWidth())+x] = val;
 }
 
-void Histogram::addValue(int x, int y, float val) {
-  this->data[(y*getWidth())+x] += val;
+void Histogram::addValue(int x, int y, int z, float val) {
+  int az = calcAzimuth(x, y);
+  int el = calcElevation(x, y, z);
+  setValue(az, el, getValue(az, el) + val);
 }
 
-int Histogram::calcAzimuth(float alpha, float xi, float xo, float yi, float yo) {
-  return (int)((1/alpha)*(atan((xi-xo)/yi-yo)));
+int Histogram::calcAzimuth(float x, float y) {
+  return (int)((1/alpha)*(atan((x-ox)/y-oy)));
 }
 
-int Histogram::calcElevation(float alpha, float zi, float zo, float xi, float xo, float yi, float yo) {
-  float p = sqrt(pow((xi-xo), 2.0) + pow((yi-yo), 2.0));
-  return (int)((1/alpha)*atan((zi-zo)/p));
+int Histogram::calcElevation(float x, float y, float z) {
+  float p = sqrt(pow((x-ox), 2.0) + pow((y-oy), 2.0));
+  return (int)((1/alpha)*atan((z-oz)/p));
 }
 
-bool Histogram::isIgnored(float xi, float yi, float zi, float xo, float yo, float zo, float ws) {
-  float dist = sqrt(pow((xi-xo), 2.0) + pow((yi-yo), 2.0) + pow((zi-zo), 2.0));
+bool Histogram::isIgnored(float x, float y, float z, float ws) {
+  float dist = sqrt(pow((x-ox), 2.0) + pow((y-oy), 2.0) + pow((z-oz), 2.0));
   return dist > (ws/2.0);
 }
 
