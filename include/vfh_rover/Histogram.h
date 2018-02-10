@@ -18,6 +18,8 @@ class Histogram {
   void setValue(int az, int el, float val);
   // For filling histogram
   void addValue(int x, int y, int z, float val);
+  
+  //Setter and getter for ox, oy, oz
 
  private:
   float* data;
