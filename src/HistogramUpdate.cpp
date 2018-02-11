@@ -1,5 +1,6 @@
 #include <vfh_rover/HistogramUpdate.h>
 #include <math.h>
+#include <vfh_rover/Vehicle.h>
 
 using namespace octomap;
 
@@ -9,10 +10,7 @@ int HistogramUpdate::enlargementAngle(float alpha, float xi, float yi, float zi,
   return (int)((1/alpha)*asin((r+s+v)/dist));
 }
 
-void HistogramUpdate::build(octomap::AbstractOcTree * input, octomath::Vector3 center) {
-  octomath::Vector3 minDist, maxDist;
-  minDist = center + octomath::Vector3(-5, -5, -5);
-  maxDist = center + octomath::Vector3(5,5,5);
-  OcTree* tree = dynamic_cast<OcTree*>(input);
-  std::cout << tree->getTreeType() << std::endl;
+void HistogramUpdate::build(AbstractOcTree & input, Vehicle v) {
+  AbstractOcTree::leaf_bbx_iterator it = input.begin_leafs_bbx(v.min(), v.max());
+  std::cout << "Here" << std::endl;
 }
