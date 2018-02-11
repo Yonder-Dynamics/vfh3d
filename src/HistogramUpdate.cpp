@@ -13,8 +13,6 @@ void HistogramUpdate::build(octomap::AbstractOcTree * input, octomath::Vector3 c
   octomath::Vector3 minDist, maxDist;
   minDist = center + octomath::Vector3(-5, -5, -5);
   maxDist = center + octomath::Vector3(5,5,5);
-
-  std::cout << input << std::endl;
-  octomap::OcTree::leaf_bbx_iterator it = ((octomap::OcTree*)input)->begin_leafs_bbx(minDist, maxDist);
-  std::cout << "Here" << std::endl;
+  OcTree* tree = dynamic_cast<OcTree*>(input);
+  std::cout << tree->getTreeType() << std::endl;
 }
