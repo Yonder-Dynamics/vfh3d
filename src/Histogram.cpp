@@ -2,11 +2,11 @@
 #include <vfh_rover/Histogram.h>
 
 float Histogram::getValue(int az, int el) {
-  return this->data[(el*getWidth())+x];
+  return this->data[(el*getWidth())+az];
 }
 
 void Histogram::setValue(int az, int el, float val) {
-  this->data[(y*getWidth())+x] = val;
+  this->data[(el*getWidth())+az] = val;
 }
 
 void Histogram::addValue(int x, int y, int z, float val) {

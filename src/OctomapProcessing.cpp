@@ -6,4 +6,9 @@
 void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
   octomap::AbstractOcTree* octree = octomap_msgs::msgToMap(*msg);
   std::cout << "Got it" << std::endl;
+  this->input = octree;
+}
+
+octomap::AbstractOcTree* OctomapProcessing::getMap() {
+  return this->input;
 }
