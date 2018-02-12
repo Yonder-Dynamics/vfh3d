@@ -2,12 +2,14 @@ cmake_minimum_required(VERSION 2.8.3)
 project(vfh_rover)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   octomap_ros
   octomap_msgs
+  PCL
+  pcl_conversions
 )
 
 find_package(octomap REQUIRED)

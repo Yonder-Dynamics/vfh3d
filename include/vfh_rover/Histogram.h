@@ -1,12 +1,20 @@
+#pragma once
+#include <string>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <octomap/octomap.h>
+
+typedef pcl::PointCloud<pcl::PointXYZRGB> RGBPointCloud;
+
 class Histogram {
  public:
   /** Constructor with width and height parameters **/
-  Histogram(float alpha, float ox, float oy, float oz): alpha(alpha), ox(ox), oy(oy), oz(oz) {
-    data = new float[getWidth() * getHeight()];
-  }
+  Histogram(float alpha, float ox, float oy, float oz);
 
-  int calcAzimuth(float x, float y);
-  int calcElevation(float x, float y, float z);
+  int getI(float x, float y);
+  int getJ(float x, float y, float z);
+  int getE(float x, float y);
+  int getZ(float x, float y, float z);
   bool isIgnored(float x, float y, float z, float ws);
 
   int getWidth();
@@ -14,15 +22,18 @@ class Histogram {
   float getAlpha();
 
   // For processing histogram
-  float getValue(int az, int el);
-  void setValue(int az, int el, float val);
+  float getValue(int i, int j);
+  void setValue(int i, int j, float val);
   // For filling histogram
-  void addValue(int x, int y, int z, float val);
-  
-  //Setter and getter for ox, oy, oz
+  void addValue(float x, float y, float z, float val);
+  void addVoxel(float x, float y, float z, float val,
+                float voxel_radius, float maxRange);
+
+  std::string displayString();
+
+  RGBPointCloud::Ptr displayCloud(float radius);
 
  private:
   float* data;
   float alpha, ox, oy, oz;
-
 };

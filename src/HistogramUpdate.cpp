@@ -1,16 +1,53 @@
 #include <vfh_rover/HistogramUpdate.h>
+#include <vfh_rover/Histogram.h>
 #include <math.h>
 #include <vfh_rover/Vehicle.h>
+#include <iostream>
 
-using namespace octomap;
+HistogramUpdate::HistogramUpdate(float alpha) {
+  this->alpha = alpha;
+};
 
-int HistogramUpdate::enlargementAngle(float alpha, float xi, float yi, float zi,
-    float xo, float yo, float zo, float r, float s ,float v) {
-  float dist = sqrt(pow((xi-xo), 2.0) + pow((yi-yo), 2.0) + pow((zi-zo), 2.0));
-  return (int)((1/alpha)*asin((r+s+v)/dist));
+bool within(float v, float l, float m) {
+  return v >= l && v <= m;
 }
 
-void HistogramUpdate::build(AbstractOcTree & input, Vehicle v) {
-  AbstractOcTree::leaf_bbx_iterator it = input.begin_leafs_bbx(v.min(), v.max());
-  std::cout << "Here" << std::endl;
+Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
+                                 float maxRange, octomap::OcTree::leaf_bbx_iterator end) {
+  std::cout << "HI" << std::endl;
+  octomath::Vector3 min (v.min().x()-maxRange,
+                         v.min().y()-maxRange,
+                         v.min().z()-maxRange);
+  octomath::Vector3 max (v.max().x()+maxRange,
+                         v.max().y()+maxRange,
+                         v.max().z()+maxRange);
+  Histogram h(alpha, v.x, v.y, v.z);
+
+  // init variables for calculations
+  float res = tree->getResolution();
+  float rad = res+v.radius()+v.safety_radius; // voxel radius
+
+  std::cout << "HI2" << std::endl;
+  int ign=0, cnt=0;
+  //for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max),
+  //     end=tree->end_leafs_bbx(); it!=end; ++it) {
+
+  for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 10) ;
+       it!=end; it++) {
+    std::cout << it.getDepth() << std::endl;
+    std::cout << "HI3" << std::endl;
+    octomath::Vector3 pos = it.getCoordinate();
+    std::cout << "HI4" << std::endl;
+    float val = (it->getValue()>0) ? it->getValue() : 0;
+    std::cout << "HI5" << std::endl;
+    if (!h.isIgnored(pos.x(), pos.y(), pos.z(), maxRange)) {
+      h.addVoxel(pos.x(), pos.y(), pos.z(), val, rad, maxRange);
+      cnt++;
+    } else {
+      ign++;
+    }
+    std::cout << "HI6" << std::endl;
+  }
+  std::cout << "Count: " << cnt << " Ignored: " << ign << std::endl;
+  return h;
 }
