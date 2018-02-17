@@ -20,8 +20,8 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
   octomap::AbstractOcTree* atree = octomap_msgs::msgToMap(*msg);
   octomap::OcTree tree = *(octomap::OcTree *)atree;
   octomap::OcTree::leaf_bbx_iterator end = tree.end_leafs_bbx();
-  for (float x=0; x<10; x+=0.5) {
-    vehicle.x = x;
+  for (float x=0.5; x<10; x+=0.5) {
+    //vehicle.x = x;
     Histogram h = hu->build(&tree, vehicle, maxRange, end);
     RGBPointCloud::Ptr pc = h.displayCloud(1);
     sensor_msgs::PointCloud2 pc_msg;

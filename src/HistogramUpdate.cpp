@@ -14,7 +14,6 @@ bool within(float v, float l, float m) {
 
 Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
                                  float maxRange, octomap::OcTree::leaf_bbx_iterator end) {
-  std::cout << "HI" << std::endl;
   octomath::Vector3 min (v.min().x()-maxRange,
                          v.min().y()-maxRange,
                          v.min().z()-maxRange);
@@ -27,26 +26,22 @@ Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
   float res = tree->getResolution();
   float rad = res+v.radius()+v.safety_radius; // voxel radius
 
-  std::cout << "HI2" << std::endl;
   int ign=0, cnt=0;
   //for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max),
   //     end=tree->end_leafs_bbx(); it!=end; ++it) {
 
   for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 10) ;
-       it!=end; it++) {
-    std::cout << it.getDepth() << std::endl;
-    std::cout << "HI3" << std::endl;
+       it!=nullptr; it++) {
+    std::cout << "Usage" << std::endl;
     octomath::Vector3 pos = it.getCoordinate();
-    std::cout << "HI4" << std::endl;
     float val = (it->getValue()>0) ? it->getValue() : 0;
-    std::cout << "HI5" << std::endl;
     if (!h.isIgnored(pos.x(), pos.y(), pos.z(), maxRange)) {
       h.addVoxel(pos.x(), pos.y(), pos.z(), val, rad, maxRange);
       cnt++;
     } else {
       ign++;
     }
-    std::cout << "HI6" << std::endl;
+    std::cout << "Iterator" << std::endl;
   }
   std::cout << "Count: " << cnt << " Ignored: " << ign << std::endl;
   return h;
