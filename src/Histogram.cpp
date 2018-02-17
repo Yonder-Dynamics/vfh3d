@@ -24,7 +24,7 @@ void Histogram::setValue(int i, int j, float val) {
 void Histogram::addValue(float x, float y, float z, float val) {
   int az = getI(x, y);
   int el = getJ(x, y, z);
-  assert(az<getWidth() && el<getHeight());
+  //assert(0 < az && az<getWidth() && 0 < el && el<getHeight());
   setValue(az, el, getValue(az, el) + val);
 }
 
@@ -44,7 +44,10 @@ void Histogram::addVoxel(float x, float y, float z, float val,
   int voxelCellSize = (int)ceil(enlargement); // divided by 2
   for (int i=be-voxelCellSize; i<be+voxelCellSize; i++) {
     for (int j=bz-voxelCellSize; j<bz+voxelCellSize; j++) {
-      setValue(i % getWidth(), j % getHeight(), getValue(i, j) + h);
+      int az = (i+getWidth()) % getWidth();
+      int el = (j+getHeight()) % getHeight();
+      setValue(az, el, getValue(i, j) + h);
+      //std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << std::endl;
     }
   }
 }
@@ -59,14 +62,13 @@ int Histogram::getZ(float x, float y, float z) {
 }
 
 int Histogram::getI(float x, float y) {
-  int i = (int)floor(atan2(x-ox, y-oy)/alpha + getWidth()/2);
+  int i = (int)floor(atan2(x-ox, y-oy)/alpha + getWidth()/2) % getWidth();
   return i;
 }
 
 int Histogram::getJ(float x, float y, float z) {
   float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  float j = (int)floor(atan2(z-oz, p)/alpha);
-  //std::cout << z << ", " << j << std::endl;
+  float j = ((int)floor(atan2(z-oz, p)/alpha) + getHeight()) % getHeight();
   return j;
 }
 
@@ -106,10 +108,11 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
       float el = alpha*j + alpha/2;
       pcl::PointXYZRGB p;
       float sign = (el < M_PI/2) ? 1 : -1;
-      p.x = cos(el)*sin(az)+ox;
-      p.y = cos(el)*cos(az)+oy;
+      p.x = radius*cos(el)*sin(az)+ox;
+      p.y = radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
-      float color = log(abs(val))*40;
+      float color = val < 0 ? 0 : val;
+      color = color > 255 ? 255 : color;
       p.r = p.g = p.b = color;
       pc->points.push_back(p);
     }

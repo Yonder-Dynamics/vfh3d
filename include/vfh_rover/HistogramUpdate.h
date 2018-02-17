@@ -14,5 +14,6 @@ class HistogramUpdate {
     float alpha;
   public:
     HistogramUpdate(float alpha);
-    Histogram build(octomap::OcTree * tree, Vehicle v, float maxRange, octomap::OcTree::leaf_bbx_iterator end);
+    Histogram build(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
+                    float maxRange, octomap::OcTree::leaf_bbx_iterator end);
 };

@@ -12,7 +12,7 @@ bool within(float v, float l, float m) {
   return v >= l && v <= m;
 }
 
-Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
+Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
                                  float maxRange, octomap::OcTree::leaf_bbx_iterator end) {
   octomath::Vector3 min (v.min().x()-maxRange,
                          v.min().y()-maxRange,
@@ -31,8 +31,7 @@ Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
   //     end=tree->end_leafs_bbx(); it!=end; ++it) {
 
   for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 10) ;
-       it!=nullptr; it++) {
-    std::cout << "Usage" << std::endl;
+       it!=end; it++) {
     octomath::Vector3 pos = it.getCoordinate();
     float val = (it->getValue()>0) ? it->getValue() : 0;
     if (!h.isIgnored(pos.x(), pos.y(), pos.z(), maxRange)) {
@@ -41,7 +40,6 @@ Histogram HistogramUpdate::build(octomap::OcTree * tree, Vehicle v,
     } else {
       ign++;
     }
-    std::cout << "Iterator" << std::endl;
   }
   std::cout << "Count: " << cnt << " Ignored: " << ign << std::endl;
   return h;
