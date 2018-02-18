@@ -21,6 +21,8 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
                          v.max().y()+maxRange,
                          v.max().z()+maxRange);
   Histogram h(alpha, v.x, v.y, v.z);
+  std::cout << min << std::endl;
+  std::cout << max << std::endl;
 
   // init variables for calculations
   float res = tree->getResolution();
@@ -31,12 +33,15 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
   //for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max),
   //     end=tree->end_leafs_bbx(); it!=end; ++it) {
 
-  for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 10) ;
+  for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 14) ;
        it!=end; it++) {
     octomath::Vector3 pos = it.getCoordinate();
     float val = (it->getValue()>0) ? it->getValue() : 0;
+    //float val = it->getValue();
+    //h.addValue(pos.x(), pos.y(), pos.z(), val);
     if (!h.isIgnored(pos.x(), pos.y(), pos.z(), maxRange)) {
       h.addVoxel(pos.x(), pos.y(), pos.z(), val, rad, maxRange);
+      //h.addValue(pos.x(), pos.y(), pos.z(), val);
       cnt++;
     } else {
       ign++;

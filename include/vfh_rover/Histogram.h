@@ -20,6 +20,7 @@ class Histogram {
   int getWidth();
   int getHeight();
   float getAlpha();
+  float mean();
 
   // For processing histogram
   float getValue(int i, int j);

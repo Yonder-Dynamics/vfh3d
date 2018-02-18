@@ -22,7 +22,7 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
   octomap::OcTree tree = *(octomap::OcTree *)atree;
   boost::shared_ptr<octomap::OcTree> s_tree = boost::make_shared<octomap::OcTree>(tree);
   octomap::OcTree::leaf_bbx_iterator end = tree.end_leafs_bbx();
-  for (float x=0; x<20; x+=0.5) {
+  for (float x=-10; x<5; x+=0.5) {
     vehicle.x = x;
     Histogram h = hu->build(s_tree, vehicle, maxRange, end);
     RGBPointCloud::Ptr pc = h.displayCloud(1);

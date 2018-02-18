@@ -6,6 +6,13 @@
 #include <cmath>
 #include <pcl/point_types.h>
 
+int modulus(int x, int modY) {
+  if (x < 0)
+    return (modY + x % modY) % modY;
+  else
+    return x % modY;
+}
+
 Histogram::Histogram(float alpha,
                      float ox, float oy, float oz):
   alpha(alpha), ox(ox), oy(oy), oz(oz)
@@ -42,19 +49,27 @@ void Histogram::addVoxel(float x, float y, float z, float val,
   float bz = getI(x, y);
   float be = getJ(x, y, z);
   int voxelCellSize = (int)(enlargement/alpha); // divided by 2
-  //std::cout << bz - voxelCellSize << " and " << bz + voxelCellSize<< std::endl;
   int az,el;
-  int width = getWidth();
-  int height = getHeight();
-  for (int i=(bz-voxelCellSize < 0) ? 0 : bz-voxelCellSize; i<bz+voxelCellSize && i<width; i++) {
-    for (int j=(be-voxelCellSize < 0) ? 0 : be-voxelCellSize; j<be+voxelCellSize && j<height; j++) {
-      az = (i+getWidth()) % getWidth();
-      el = (j+getHeight()) % getHeight();
-      setValue(az, el, getValue(i, j) + h);
-//      std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << "i: "<< i << " j: " << j << std::endl;
+  for (int i=bz-voxelCellSize; i<bz+voxelCellSize; i++) {
+    for (int j=be-voxelCellSize; j<be+voxelCellSize; j++) {
+      az = modulus(i, getWidth());
+      el = modulus(j, getHeight());
+      setValue(az, el, getValue(az, el) + h);
+      if (az < 0 or el < 0 or az >= getWidth() or el >= getHeight())
+        std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << "i: "<< i << " j: " << j << std::endl;
     }
   }
 
+}
+
+float Histogram::mean() {
+  float s = 0;
+  for (int j=0; j<this->getHeight(); j++) {
+    for (int i=0; i<this->getWidth(); i++) {
+      s += getValue(i, j);
+    }
+  }
+  return s / getWidth() / getHeight();
 }
 
 int Histogram::getI(float x, float y) {
@@ -97,15 +112,16 @@ std::string Histogram::displayString() {
 
 RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
   RGBPointCloud::Ptr pc (new RGBPointCloud);
+  float m = mean();
   for (int i=0; i<this->getWidth(); i++) {
     for (int j=0; j<this->getHeight(); j++) {
-      float val = getValue(i, j);
+      float val = getValue(i, j) * (255/m);
       float az = alpha*i + alpha/2;
       float el = alpha*j + alpha/2;
       pcl::PointXYZRGB p;
       float sign = (el < M_PI/2) ? 1 : -1;
-      p.x = radius*cos(el)*sin(az)+ox;
-      p.y = radius*cos(el)*cos(az)+oy;
+      p.x = -sign*radius*cos(el)*sin(az)+ox;
+      p.y = -sign*radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
       float color = val < 0 ? 0 : val;
       color = color > 255 ? 255 : color;
