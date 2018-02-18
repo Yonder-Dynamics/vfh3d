@@ -36,8 +36,10 @@ set(LINK_LIBS
   ${catkin_LIBRARIES}
 )
 
-file(GLOB SRC
-  "src/*.cpp"
+set(SRC
+  "src/Histogram.cpp"
+  "src/HistogramUpdate.cpp"
+  "src/OctomapProcessing.cpp"
 )
 
 ## Add cmake target dependencies of the library
@@ -51,6 +53,8 @@ file(GLOB SRC
 add_executable(${PROJECT_NAME}_node src/vfh_rover_node.cpp ${SRC})
 target_link_libraries(${PROJECT_NAME}_node ${LINK_LIBS})
 
+add_executable(${PROJECT_NAME}_testPC src/SingleVoxTest.cpp ${SRC})
+target_link_libraries(${PROJECT_NAME}_testPC ${LINK_LIBS})
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use

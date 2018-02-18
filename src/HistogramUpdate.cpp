@@ -6,8 +6,7 @@
 
 HistogramUpdate::HistogramUpdate(float alpha) {
   this->alpha = alpha;
-};
-
+}
 bool within(float v, float l, float m) {
   return v >= l && v <= m;
 }
