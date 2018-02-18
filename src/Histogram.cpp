@@ -34,31 +34,27 @@ void Histogram::addVoxel(float x, float y, float z, float val,
   float dist = sqrt(pow(x-ox, 2) +
                     pow(y-oy, 2) +
                     pow(z-oz, 2));
-  float enlargement = floor(atan2(voxel_radius, dist)/alpha)/alpha;
+  float enlargement = floor(asin(voxel_radius/dist)/alpha);
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
   float h = val*val*(a-b*(dist-voxel_radius));
 
-  float be = getI(x, y);
-  float bz = getJ(x, y, z);
-  int voxelCellSize = (int)ceil(enlargement); // divided by 2
-  for (int i=be-voxelCellSize; i<be+voxelCellSize; i++) {
-    for (int j=bz-voxelCellSize; j<bz+voxelCellSize; j++) {
-      int az = (i+getWidth()) % getWidth();
-      int el = (j+getHeight()) % getHeight();
+  float bz = getI(x, y);
+  float be = getJ(x, y, z);
+  int voxelCellSize = (int)(enlargement/alpha); // divided by 2
+  //std::cout << bz - voxelCellSize << " and " << bz + voxelCellSize<< std::endl;
+  int az,el;
+  int width = getWidth();
+  int height = getHeight();
+  for (int i=(bz-voxelCellSize < 0) ? 0 : bz-voxelCellSize; i<bz+voxelCellSize && i<width; i++) {
+    for (int j=(be-voxelCellSize < 0) ? 0 : be-voxelCellSize; j<be+voxelCellSize && j<height; j++) {
+      az = (i+getWidth()) % getWidth();
+      el = (j+getHeight()) % getHeight();
       setValue(az, el, getValue(i, j) + h);
-      //std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << std::endl;
+//      std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << "i: "<< i << " j: " << j << std::endl;
     }
   }
-}
 
-int Histogram::getE(float x, float y) {
-  return atan2(x-ox, y-oy)/alpha + getWidth()/2;
-}
-
-int Histogram::getZ(float x, float y, float z) {
-  float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  return atan2(z-oz, p)/alpha;
 }
 
 int Histogram::getI(float x, float y) {
@@ -80,7 +76,7 @@ bool Histogram::isIgnored(float x, float y, float z, float ws) {
 }
 
 int Histogram::getWidth() {
-  return int(((2*M_PI)/this->alpha));
+  return int(ceil((2*M_PI)/this->alpha));
 }
 
 int Histogram::getHeight() {

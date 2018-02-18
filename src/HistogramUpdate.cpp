@@ -24,7 +24,8 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
 
   // init variables for calculations
   float res = tree->getResolution();
-  float rad = res+v.radius()+v.safety_radius; // voxel radius
+  std::cout << "Resolution is: " << res << std::endl;
+  float rad = (res)+v.radius()+v.safety_radius; // voxel radius
 
   int ign=0, cnt=0;
   //for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max),

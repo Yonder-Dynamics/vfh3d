@@ -13,11 +13,6 @@ int main(int argc, char ** argv) {
   OctomapProcessing op (M_PI/10, v, 5, n);
   ros::Subscriber sub = n.subscribe("/octomap_full", 3,
       &OctomapProcessing::octomapCallback, &op);
-  ros::Rate r(2);
-  while (1)
-  {
-    ros::spinOnce();
-    r.sleep();
-  }
+  ros::spin();
   return 0;
 }
