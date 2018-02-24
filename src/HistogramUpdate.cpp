@@ -20,12 +20,9 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
                          v.max().y()+maxRange,
                          v.max().z()+maxRange);
   Histogram h(alpha, v.x, v.y, v.z);
-  std::cout << min << std::endl;
-  std::cout << max << std::endl;
 
   // init variables for calculations
   float res = tree->getResolution();
-  std::cout << "Resolution is: " << res << std::endl;
   float rad = (res)+v.radius()+v.safety_radius; // voxel radius
 
   int ign=0, cnt=0;

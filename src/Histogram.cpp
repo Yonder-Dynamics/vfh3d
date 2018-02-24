@@ -13,6 +13,11 @@ int modulus(int x, int modY) {
     return x % modY;
 }
 
+int clip(int x, int min, int max) {
+  int c = (x > max) ? max : x;
+  return (c < min) ? min : c;
+}
+
 Histogram::Histogram(float alpha,
                      float ox, float oy, float oz):
   alpha(alpha), ox(ox), oy(oy), oz(oz)
@@ -48,15 +53,26 @@ void Histogram::addVoxel(float x, float y, float z, float val,
 
   float bz = getI(x, y);
   float be = getJ(x, y, z);
-  int voxelCellSize = (int)(enlargement/alpha); // divided by 2
+  int voxelCellSize = 1; //(int)(enlargement/alpha); // divided by 2
   int az,el;
+  //std::cout << "bz: " << bz << ", be: " << be << ", vc: " << voxelCellSize << std::endl;
+  std::cout << "bz: " << bz << ", be: " << be << ", vc: " << voxelCellSize << std::endl;
   for (int i=bz-voxelCellSize; i<bz+voxelCellSize; i++) {
     for (int j=be-voxelCellSize; j<be+voxelCellSize; j++) {
       az = modulus(i, getWidth());
-      el = modulus(j, getHeight());
+      //el = modulus(j, getHeight());
+      //az = clip(i, 2, getWidth()-3);
+      el = clip(j, 0, getHeight());
+      if (el - j < 0) {
+        std::cout << el << " h: " << getHeight() << " j: " << j << ", " << el - j << std::endl;
+        el = j - el;
+        az = modulus(az+getWidth()/2, getWidth());
+      } else if (el - j > 0) {
+        el = getHeight() - j - el - 1;
+        az = modulus(az+getWidth()/2, getWidth());
+      }
       setValue(az, el, getValue(az, el) + h);
-      if (az < 0 or el < 0 or az >= getWidth() or el >= getHeight())
-        std::cout << az << ", " << el << ", " << getWidth() << ", " << getHeight() << "i: "<< i << " j: " << j << std::endl;
+      //std::cout << el << " h: " << getHeight() << " j: " << j << std::endl;
     }
   }
 
@@ -73,14 +89,19 @@ float Histogram::mean() {
 }
 
 int Histogram::getI(float x, float y) {
-  int i = (int)floor(atan2(x-ox, y-oy)/alpha + getWidth()/2) % getWidth();
+  int i = modulus(floor(atan2(x-ox, y-oy)/alpha + getWidth()/2), getWidth());
   return i;
 }
 
 int Histogram::getJ(float x, float y, float z) {
   float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  float j = ((int)floor(atan2(z-oz, p)/alpha) + getHeight()) % getHeight();
-  return j;
+  //float j = modulus(-floor(atan2(z-oz, p)/alpha - getHeight()/2), getHeight());
+  //int j = floor(getHeight()/2 - atan2(z-oz, p)/alpha);
+  float at = atan2(z-oz, p)/alpha;
+  if (at < 0) // modifications for the bottom half
+    return floor(getHeight()/2 - at - 1.5);
+  else // modifications for the top half
+    return clip(at, 0, 2*getHeight());
 }
 
 bool Histogram::isIgnored(float x, float y, float z, float ws) {

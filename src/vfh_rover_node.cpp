@@ -9,8 +9,8 @@ using namespace octomap;
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "vfh_rover_node");
   ros::NodeHandle n;
-  Vehicle v = {0,0,6, 1,1,1, 2};
-  OctomapProcessing op (M_PI/10, v, 5, n);
+  Vehicle v = {0,0,-3, 1,1,1, 1};
+  OctomapProcessing op (M_PI/10, v, 6, n);
   ros::Subscriber sub = n.subscribe("/octomap_full", 3,
       &OctomapProcessing::octomapCallback, &op);
   ros::spin();

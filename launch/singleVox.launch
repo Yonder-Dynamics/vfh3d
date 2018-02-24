@@ -1,5 +1,6 @@
 <launch>
-  <node pkg ="octomap_server" type="octomap_server_node" name="octomap_server">
+  <node pkg="vfh_rover" type="vfh_rover_testPC" name="singleVoxPc"/>
+  <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
     <param name="resolution" value="0.05" />
     <remap from="cloud_in" to="testVox"/>
   </node>
