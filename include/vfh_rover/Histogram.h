@@ -3,8 +3,16 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <octomap/octomap.h>
+#include <vfh_rover/Vehicle.h>
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> RGBPointCloud;
+
+
+void scalar_add(float* vals, float val, float* ret_val, int count);
+void add(float* x, float* y, float* ret_val, int count);
+void add(float* x, float y, float* ret_val, int count);
+int modulus(int x, int modY);
+int clip(int x, int min, int max);
 
 class Histogram {
  public:
@@ -25,10 +33,18 @@ class Histogram {
   // For processing histogram
   float getValue(int i, int j);
   void setValue(int i, int j, float val);
+  void addValue(float i, float j, float val);
+  // Functions for manipulating windows of values
+  void addValues(float* vals, int x, int y, int width, int height);
+  void addValues(float val, int x, int y, int width, int height);
+  void setValues(float* vals, int x, int y, int width, int height);
+  void getValues(float* return_vals, int x, int y, int width, int height);
   // For filling histogram
-  void addValue(float x, float y, float z, float val);
   void addVoxel(float x, float y, float z, float val,
                 float voxel_radius, float maxRange);
+  void addVoxel(float x, float y, float z, float val);
+  void checkTurning(float x, float y, float z, float val,
+                    Vehicle v, float voxel_radius);
 
   std::string displayString();
 

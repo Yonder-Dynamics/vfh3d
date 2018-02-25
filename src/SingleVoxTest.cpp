@@ -37,7 +37,7 @@ void publishPC() {
   pcl::toROSMsg(*pc, pc_msg);
   pc_msg.header.frame_id = "map";
   ros::Rate loop(0.5);
-  while(ros::ok()) {
+  for (int i = 0; i<10; i++) {
     pub.publish(pc_msg);
     loop.sleep();
   }

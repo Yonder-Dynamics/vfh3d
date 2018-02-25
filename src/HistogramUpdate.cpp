@@ -36,7 +36,9 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
     //float val = it->getValue();
     //h.addValue(pos.x(), pos.y(), pos.z(), val);
     if (!h.isIgnored(pos.x(), pos.y(), pos.z(), maxRange)) {
-      h.addVoxel(pos.x(), pos.y(), pos.z(), val, rad, maxRange);
+      //h.addVoxel(pos.x(), pos.y(), pos.z(), val, rad, maxRange);
+      h.addVoxel(pos.x(), pos.y(), pos.z(), val);
+      h.checkTurning(pos.x(), pos.y(), pos.z(), val, v, rad);
       //h.addValue(pos.x(), pos.y(), pos.z(), val);
       cnt++;
     } else {
