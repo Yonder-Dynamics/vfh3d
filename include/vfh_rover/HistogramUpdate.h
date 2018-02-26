@@ -15,6 +15,6 @@ class HistogramUpdate {
   public:
     HistogramUpdate(float alpha);
     Histogram build(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
-                    float maxRange, octomap::OcTree::leaf_bbx_iterator end);
+       float maxRange, float maxRange);
     void binarize(Histogram& primary, int range);
 };

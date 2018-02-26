@@ -40,6 +40,7 @@ set(SRC
   "src/Histogram.cpp"
   "src/HistogramUpdate.cpp"
   "src/OctomapProcessing.cpp"
+  "src/util.cpp"
 )
 
 ## Add cmake target dependencies of the library
