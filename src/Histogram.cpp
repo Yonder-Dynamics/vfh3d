@@ -6,36 +6,7 @@
 #include <iostream>
 #include <cmath>
 #include <pcl/point_types.h>
-
-void scalar_add(float* vals, float val, float* ret_val, int count) {
-  for (int i = 0; i < count; i++) {
-    ret_val[i] = vals[i] + val;
-  }
-}
-
-void add(float* x, float* y, float* ret_val, int count) {
-  for (int i = 0; i < count; i++) {
-    ret_val[i] = x[i] + y[i];
-  }
-}
-
-void add(float* x, float y, float* ret_val, int count) {
-  for (int i = 0; i < count; i++) {
-    ret_val[i] = x[i] + y;
-  }
-}
-
-int modulus(int x, int modY) {
-  if (x < 0)
-    return (modY + x % modY) % modY;
-  else
-    return x % modY;
-}
-
-int clip(int x, int min, int max) {
-  int c = (x > max) ? max : x;
-  return (c < min) ? min : c;
-}
+#include <geometry_msgs/Pose.h>
 
 Histogram::Histogram(float alpha,
                      float ox, float oy, float oz):
@@ -44,12 +15,66 @@ Histogram::Histogram(float alpha,
   data = new float[getWidth() * getHeight()]();
 }
 
+int Histogram::getI(float x, float y) {
+  int i = modulus(floor(atan2(x-ox, y-oy)/alpha), getWidth());
+  return i;
+}
+
+int Histogram::getJ(float x, float y, float z) {
+  float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
+  //float j = modulus(-floor(atan2(z-oz, p)/alpha - getHeight()/2), getHeight());
+  //int j = floor(getHeight()/2 - atan2(z-oz, p)/alpha);
+  float at = (atan2(z-oz, p)+M_PI/2)/alpha;
+  //return clip(floor(((float)getHeight())/2 - at+0.5), 0, getHeight());
+  /*
+    if (at < 0) // modifications for the bottom half
+    return clip(floor(((float)getHeight())/2 - at -alpha*2), 0, getHeight()-1);
+    else // modifications for the top half
+    return clip(at, 0, getHeight());
+  */
+  return at;
+}
+
+// j = 0 = top
 float Histogram::getValue(int i, int j) {
-  return this->data[(j*getWidth())+i];
+  int az = modulus(i, getWidth());
+  int el = clip(j, 0, getHeight()-1);
+  if (j - el > 0) {
+    std::cout << "HI1 " << i << ", " << j << std::endl;
+    // if el overflows the top and goes over to the other side
+    // j is negative
+    // el is 0
+    el = getHeight() - (j-el);
+    az = modulus(az, getWidth());
+  } else if (j - el > 0) {
+    // if el overflows the bot and goes over to the other side
+    std::cout << "HI2" << std::endl;
+    el = -(j-el);
+    az = modulus(az+getWidth()/2, getWidth());
+  }
+  //std::cout << "g: " << (el*getWidth())+az << std::endl;
+  return this->data[(el*getWidth())+az];
 }
 
 void Histogram::setValue(int i, int j, float val) {
-  this->data[(j*getWidth())+i] = val;
+  int az = modulus(i, getWidth());
+  int el = clip(j, 0, getHeight()-1);
+  if (j - el > 0) {
+    std::cout << "HI1 " << i << ", " << j << std::endl;
+    // if el overflows the top and goes over to the other side
+    // j is negative
+    // el is 0
+    el = getHeight() - (j-el);
+    az = modulus(az, getWidth());
+  } else if (j - el > 0) {
+    // if el overflows the bot and goes over to the other side
+    std::cout << "HI2" << std::endl;
+    el = -(j-el);
+    az = modulus(az+getWidth()/2, getWidth());
+  }
+  //std::cout << "HI3 " << i << ", " << j << ", " << getHeight() << std::endl;
+  //std::cout << "s: " << (el*getWidth())+az << std::endl;
+  this->data[(el*getWidth())+az] = val;
 }
 
 void Histogram::addValue(float i, float j, float val) {
@@ -60,18 +85,7 @@ void Histogram::setValues(float* vals, int x, int y, int width, int height) {
   float el, az;
   for (int i=x; i<x+width; i++) {
     for (int j=y; j<y+height; j++) {
-      az = modulus(i, getWidth());
-      //el = modulus(j, getHeight());
-      //az = clip(i, 2, getWidth()-3);
-      el = clip(j, 0, getHeight());
-      if (el - j < 0) {
-        el = j - el;
-        az = modulus(az+getWidth()/2, getWidth());
-      } else if (el - j > 0) {
-        el = getHeight() - j - el - 1;
-        az = modulus(az+getWidth()/2, getWidth());
-      }
-      setValue(az, el, vals[(j-y)*width+(i-x)]);
+      setValue(i, j, vals[(j-y)*width+(i-x)]);
     }
   }
 }
@@ -80,41 +94,16 @@ void Histogram::addValues(float* vals, int x, int y, int width, int height) {
   float el, az;
   for (int i=x; i<x+width; i++) {
     for (int j=y; j<y+height; j++) {
-      //az = modulus(i, getWidth());
-      az = clip(i, 0, getWidth());
-      //el = modulus(j, getHeight());
-      //az = clip(i, 2, getWidth()-3);
-      el = clip(j, 0, getHeight());
-      if (el - j < 0) {
-        el = 0;// j - el;
-        az = 0;//modulus(az+getWidth()/2, getWidth());
-      } else if (el - j > 0) {
-        el = 0; //getHeight() - j - el - 1;
-        az = 0;//modulus(az+getWidth()/2, getWidth());
-      }
-      setValue(az, el, getValue(az, el) + vals[(j-y)*width+(i-x)]);
+      setValue(i, j, getValue(i, j) + vals[(j-y)*width+(i-x)]);
     }
   }
 }
 
 void Histogram::addValues(float val, int x, int y, int width, int height) {
-  std::cout << "A" << std::endl;
   float el, az;
   for (int i=x; i<x+width; i++) {
     for (int j=y; j<y+height; j++) {
-      //az = modulus(i, getWidth());
-      az = clip(i, 0, getWidth());
-      //el = modulus(j, getHeight());
-      //az = clip(i, 2, getWidth()-3);
-      el = clip(j, 0, getHeight());
-      if (el - j < 0) {
-        el = 0;j - el;
-        az = 0;modulus(az+getWidth()/2, getWidth());
-      } else if (el - j > 0) {
-        el = 0;getHeight() - j - el - 1;
-        az = 0;modulus(az+getWidth()/2, getWidth());
-      }
-      setValue(az, el, getValue(az, el) + val);
+      setValue(i, j, getValue(i, j) + val);
     }
   }
 }
@@ -123,18 +112,7 @@ void Histogram::getValues(float* return_vals, int x, int y, int width, int heigh
   float el, az;
   for (int i=x; i<x+width; i++) {
     for (int j=y; j<y+height; j++) {
-      az = modulus(i, getWidth());
-      //el = modulus(j, getHeight());
-      //az = clip(i, 2, getWidth()-3);
-      el = clip(j, 0, getHeight());
-      if (el - j < 0) {
-        el = j - el;
-        az = modulus(az+getWidth()/2, getWidth());
-      } else if (el - j > 0) {
-        el = getHeight() - j - el - 1;
-        az = modulus(az+getWidth()/2, getWidth());
-      }
-      return_vals[(j-y)*width+(i-x)] = getValue(az, el);
+      return_vals[(j-y)*width+(i-x)] = getValue(i, j);
     }
   }
 }
@@ -142,13 +120,11 @@ void Histogram::getValues(float* return_vals, int x, int y, int width, int heigh
 void Histogram::addVoxel(float x, float y, float z, float val) {
   int az = getI(x, y);
   int el = getJ(x, y, z);
-  //assert(0 < az && az<getWidth() && 0 < el && el<getHeight());
   setValue(az, el, getValue(az, el) + val);
 }
 
 void Histogram::addVoxel(float x, float y, float z, float val,
                          float voxel_radius, float maxRange) {
-  std::cout << "V" << std::endl;
   // For weight calculation
   float dist = sqrt(pow(x-ox, 2) +
                     pow(y-oy, 2) +
@@ -184,37 +160,59 @@ void Histogram::checkTurning(float x, float y, float z, float val,
                   pow((turningRightCenterY - (x-ox)), 2));
   float dl = sqrt(pow((turningLeftCenterX - (x-ox)), 2) +
                   pow((turningLeftCenterY - (x-ox)), 2));
-  std::cout << dr << ", " << dl << std::endl;
   float rad = v.safety_radius+v.radius()+voxel_radius;
   if (dr < v.turningRadiusR()+rad || dl < v.turningRadiusL()+rad)
     addValue(i, j, val);
 }
 
-float Histogram::mean() {
-  float s = 0;
-  for (int j=0; j<this->getHeight(); j++) {
-    for (int i=0; i<this->getWidth(); i++) {
-      s += getValue(i, j);
+std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
+  std::cout << "A" << std::endl;
+  float ret_vals[width*height];
+  std::vector<geometry_msgs::Pose> ps;
+  float az, el;
+  for (int i=0; i<getWidth(); i++) {
+    for (int j=0; j<getHeight(); j++) {
+      getValues(ret_vals, i, j, width, height);
+      /*
+      for (int i2=0; i2<width; i2++) {
+        for (int j2=0; j2<height; j2++) {
+          std::cout << ret_vals[j2*width+i2] << ", ";
+        }
+        std::cout << std::endl;
+      }
+      */
+      float s = sum(ret_vals, width*height);
+      //std::cout << s << std::endl;
+      if (abs(s) < 0.0001) {
+        az = -(i+(float)width/2-getWidth()/4)*alpha;
+        el = M_PI/2-(j+(float)height/2-1)*alpha;
+        //std::cout << el << ", " << az << std::endl;
+        geometry_msgs::Pose p;
+        // Abbreviations for the various angular functions
+        double cy = cos(az * 0.5);
+        double sy = sin(az * 0.5);
+        double cr = cos(0 * 0.5); // roll = 0
+        double sr = sin(0 * 0.5); // roll = 0
+        double cp = cos(el * 0.5);
+        double sp = sin(el * 0.5);
+
+        p.orientation.w = cy * cr * cp + sy * sr * sp;
+        p.orientation.x = cy * sr * cp - sy * cr * sp;
+        p.orientation.y = cy * cr * sp + sy * sr * cp;
+        p.orientation.z = sy * cr * cp - cy * sr * sp;
+
+        p.position.x = ox;
+        p.position.y = oy;
+        p.position.z = oz;
+        ps.push_back(p);
+      }
     }
   }
-  return s / getWidth() / getHeight();
+  return ps;
 }
 
-int Histogram::getI(float x, float y) {
-  int i = modulus(floor(atan2(x-ox, y-oy)/alpha + getWidth()/2), getWidth());
-  return i;
-}
-
-int Histogram::getJ(float x, float y, float z) {
-  float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  //float j = modulus(-floor(atan2(z-oz, p)/alpha - getHeight()/2), getHeight());
-  //int j = floor(getHeight()/2 - atan2(z-oz, p)/alpha);
-  float at = atan2(z-oz, p)/alpha;
-  //return clip(floor(((float)getHeight())/2 - at+0.5), 0, getHeight());
-  if (at < 0) // modifications for the bottom half
-    return clip(floor(((float)getHeight())/2 - at -alpha*2), 0, getHeight()-1);
-  else // modifications for the top half
-    return clip(at, 0, getHeight());
+float Histogram::mean() {
+  return sum(data, getWidth()*getHeight()) / getWidth() / getHeight();
 }
 
 bool Histogram::isIgnored(float x, float y, float z, float ws) {
@@ -250,8 +248,8 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
   for (int i=0; i<this->getWidth(); i++) {
     for (int j=0; j<this->getHeight(); j++) {
       float val = getValue(i, j) * (255/m);
-      float az = alpha*i + alpha/2;
-      float el = alpha*j + alpha/2;
+      float az = alpha*modulus(i-getWidth()/2, getWidth()) + alpha/2;
+      float el = alpha*modulus(j-getHeight()/2, getHeight()) + alpha/2;
       pcl::PointXYZRGB p;
       float sign = (el < M_PI/2) ? 1 : -1;
       p.x = -sign*radius*cos(el)*sin(az)+ox;

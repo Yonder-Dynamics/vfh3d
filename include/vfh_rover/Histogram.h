@@ -1,18 +1,14 @@
 #pragma once
 #include <string>
+#include <vector>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <octomap/octomap.h>
 #include <vfh_rover/Vehicle.h>
+#include <vfh_rover/util.h>
+#include <geometry_msgs/Pose.h>
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> RGBPointCloud;
-
-
-void scalar_add(float* vals, float val, float* ret_val, int count);
-void add(float* x, float* y, float* ret_val, int count);
-void add(float* x, float y, float* ret_val, int count);
-int modulus(int x, int modY);
-int clip(int x, int min, int max);
 
 class Histogram {
  public:
@@ -21,8 +17,6 @@ class Histogram {
 
   int getI(float x, float y);
   int getJ(float x, float y, float z);
-  int getE(float x, float y);
-  int getZ(float x, float y, float z);
   bool isIgnored(float x, float y, float z, float ws);
 
   int getWidth();
@@ -45,6 +39,7 @@ class Histogram {
   void addVoxel(float x, float y, float z, float val);
   void checkTurning(float x, float y, float z, float val,
                     Vehicle v, float voxel_radius);
+  std::vector<geometry_msgs::Pose> findPaths(int width, int height);
 
   std::string displayString();
 
