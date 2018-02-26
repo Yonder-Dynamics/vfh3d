@@ -23,7 +23,9 @@ class Histogram {
   int getHeight();
   float getAlpha();
   float mean();
-
+  float std();
+  float getMeanArea();
+  float getArea(int elevation);
   // For processing histogram
   float getValue(int i, int j);
   void setValue(int i, int j, float val);

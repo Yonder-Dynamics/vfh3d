@@ -34,6 +34,8 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
       // Build
       vehicle.x = x;
       Histogram h = hu->build(s_tree, vehicle, maxRange);
+      //hu->binarize(h, 1);
+      std::cout << h.displayString() << std::endl;
       // Disp histogram point cloud
       RGBPointCloud::Ptr pc = h.displayCloud(1);
       sensor_msgs::PointCloud2 pc_msg;
@@ -41,7 +43,6 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
       pc_msg.header.frame_id = "map";
       histogram_pub.publish(pc_msg);
       // Disp string
-      std::cout << h.displayString() << std::endl;
 
       // Disp found free positions
       geometry_msgs::PoseArray pa;

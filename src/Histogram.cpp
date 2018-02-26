@@ -9,7 +9,7 @@
 #include <geometry_msgs/Pose.h>
 
 Histogram::Histogram(float alpha,
-                     float ox, float oy, float oz):
+    float ox, float oy, float oz):
   alpha(alpha), ox(ox), oy(oy), oz(oz)
 {
   data = new float[getWidth() * getHeight()]();
@@ -29,7 +29,6 @@ float Histogram::getValue(int i, int j) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    //std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -37,7 +36,6 @@ float Histogram::getValue(int i, int j) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    //std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -49,7 +47,6 @@ void Histogram::setValue(int i, int j, float val) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    //std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -57,7 +54,6 @@ void Histogram::setValue(int i, int j, float val) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    //std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -113,11 +109,11 @@ void Histogram::addVoxel(float x, float y, float z, float val) {
 }
 
 void Histogram::addVoxel(float x, float y, float z, float val,
-                         float voxel_radius, float maxRange) {
+    float voxel_radius, float maxRange) {
   // For weight calculation
   float dist = sqrt(pow(x-ox, 2) +
-                    pow(y-oy, 2) +
-                    pow(z-oz, 2));
+      pow(y-oy, 2) +
+      pow(z-oz, 2));
   float enlargement = floor(asin(voxel_radius/dist)/alpha);
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
@@ -155,7 +151,6 @@ void Histogram::checkTurning(float x, float y, float z, float val,
 }
 
 std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
-  std::cout << "A" << std::endl;
   float ret_vals[width*height];
   std::vector<geometry_msgs::Pose> ps;
   float az, el;
@@ -245,13 +240,51 @@ geometry_msgs::Pose Histogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicl
 }
 
 float Histogram::mean() {
-  return sum(data, getWidth()*getHeight()) / getWidth() / getHeight();
+  return sum(data, getWidth()*getHeight()) / getHeight() / getWidth();
 }
+float Histogram::std() {
+  float mean = this->mean();
+  float val, total;
+  for(int i=0; i<this->getWidth(); i++) {
+    for(int j=0; j<this->getHeight(); j++) {
+      val = this->getValue(i, j);
+      if(val != 0)
+      total += pow((val - mean), 2);
+    }
+  }
+
+  total /= (this->getWidth() * this->getHeight());
+  total = pow(total, 0.5);
+  return total;
+}
+
+
+float Histogram::getMeanArea() {
+  float radius = 1;
+
+  float area = 4*M_PI*pow(radius, 2);
+  return area/(this->getWidth() *  this->getHeight());
+}
+
+float Histogram::getArea(int elevation) {
+  float r1, r2, h1, h2, r, h;
+  float elevationF = ((getHeight()/2 - elevation) >= 0 ? elevation : abs(getHeight() - elevation));
+  h1 = cos(this->alpha * elevationF);
+  h2 = cos(this->alpha * (elevationF+1));
+  r1 = sin(this->alpha * elevationF);
+  r2 = sin(this->alpha * (elevationF+1));
+
+  r = (r1+r2)/2;
+  h = (h1-h2);
+  std::cout << "Radius is ------------: " << r << " Height is ---------: "<< h << "At elevation: " << elevationF<<std::endl;
+  return 2*M_PI*(r*h)/getWidth();
+}
+
 
 bool Histogram::isIgnored(float x, float y, float z, float ws) {
   float dist = sqrt(pow((x-ox), 2) +
-                    pow((y-oy), 2) +
-                    pow((z-oz), 2));
+      pow((y-oy), 2) +
+      pow((z-oz), 2));
   return dist > ws;
 }
 
@@ -280,7 +313,7 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
   float m = mean();
   for (int i=0; i<this->getWidth(); i++) {
     for (int j=0; j<this->getHeight(); j++) {
-      float val = getValue(i, j) * (255/m);
+      float val = getValue(i, j) * (255);
       float az = alpha*modulus(i-getWidth()/2, getWidth()) + alpha/2;
       float el = alpha*modulus(j-getHeight()/2, getHeight()) + alpha/2;
       pcl::PointXYZRGB p;
@@ -288,8 +321,8 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
       p.x = -sign*radius*cos(el)*sin(az)+ox;
       p.y = -sign*radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
-      float color = val < 0 ? 0 : val;
-      color = color > 255 ? 255 : color;
+      float color = val;
+      //color = color == 255 ? 255 : color;
       p.r = p.g = p.b = color;
       pc->points.push_back(p);
     }
