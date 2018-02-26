@@ -27,7 +27,7 @@ Histogram HistogramUpdate::build(boost::shared_ptr<octomap::OcTree> tree, Vehicl
 
   int ign=0, cnt=0;
   for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 14),
-       end=tree->end_leafs_bbx(); it!=end; ++it) {
+      end=tree->end_leafs_bbx(); it!=end; ++it) {
     octomath::Vector3 pos = it.getCoordinate();
     float val = (it->getValue()>0) ? it->getValue() : 0;
     //float val = it->getValue();
@@ -54,18 +54,18 @@ void HistogramUpdate::binarize(Histogram& primary, int range) {
   std::cout << "Thresholds: "<<tHighB << "---------------" << tLowB << std::endl;
 
   for(int j=0; j<primary.getHeight(); j++) {
-    //ratio = primary.getArea(j) / meanArea;
-    ratio = 1;
-    std::cout << "Ratio: "<<ratio << "----------------" << std::endl;
-    tLow = tHighB * ratio;
-    tHigh = tLowB * ratio;
+    //    ratio = primary.getArea(j) / meanArea;
+    ratio = 1;  
+    //std::cout << "Ratio: "<<ratio << "----------------" << std::endl;
+    tLow = tLowB * ratio;
+    tHigh = tHighB * ratio;
     for(int i = 0; i<primary.getWidth(); i++) {
       val = primary.getValue(i, j);
       if(val > tHigh)
         primary.setValue(i, j, 1.0);
       else if(val < tLow)
         primary.setValue(i, j, 0.0);
-      else if(j != 0)
+      else if(i != 0)
         primary.setValue(i, j, primary.getValue(i-1, j));
       else
         primary.setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);

@@ -40,7 +40,6 @@ float Histogram::getValue(int i, int j) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -48,7 +47,6 @@ float Histogram::getValue(int i, int j) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -60,7 +58,6 @@ void Histogram::setValue(int i, int j, float val) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -68,7 +65,6 @@ void Histogram::setValue(int i, int j, float val) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -166,7 +162,6 @@ void Histogram::checkTurning(float x, float y, float z, float val,
 }
 
 std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
-  std::cout << "A" << std::endl;
   float ret_vals[width*height];
   std::vector<geometry_msgs::Pose> ps;
   float az, el;
@@ -212,7 +207,7 @@ std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
 }
 
 float Histogram::mean() {
-  return sum(data, getWidth()*getHeight()) / getWidth() / getHeight();
+  return sum(data, getWidth()*getHeight()) / getHeight() / getWidth();
 }
 float Histogram::std() {
   float mean = this->mean();
@@ -220,6 +215,7 @@ float Histogram::std() {
   for(int i=0; i<this->getWidth(); i++) {
     for(int j=0; j<this->getHeight(); j++) {
       val = this->getValue(i, j);
+      if(val != 0)
       total += pow((val - mean), 2);
     }
   }
@@ -228,6 +224,7 @@ float Histogram::std() {
   total = pow(total, 0.5);
   return total;
 }
+
 
 float Histogram::getMeanArea() {
   float radius = 1;
@@ -246,25 +243,10 @@ float Histogram::getArea(int elevation) {
   
   r = (r1+r2)/2;
   h = (h1-h2);
-//  std::cout << "Radius is ------------: " << r << " Height is ---------: "<< h << "At elevation: " << elevationF<<std::endl;
+  std::cout << "Radius is ------------: " << r << " Height is ---------: "<< h << "At elevation: " << elevationF<<std::endl;
   return 2*M_PI*(r*h)/getWidth();
 }
 
-int Histogram::getI(float x, float y) {
-  int i = modulus(floor(atan2(x-ox, y-oy)/alpha + getWidth()/2), getWidth());
-  return i;
-}
-
-int Histogram::getJ(float x, float y, float z) {
-  float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  //float j = modulus(-floor(atan2(z-oz, p)/alpha - getHeight()/2), getHeight());
-  //int j = floor(getHeight()/2 - atan2(z-oz, p)/alpha);
-  float at = atan2(z-oz, p)/alpha;
-  if (at < 0) // modifications for the bottom half
-    return floor(getHeight()/2 - at - 1.5);
-  else // modifications for the top half
-    return clip(at, 0, 2*getHeight());
-}
 
 bool Histogram::isIgnored(float x, float y, float z, float ws) {
   float dist = sqrt(pow((x-ox), 2) +
@@ -298,7 +280,7 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
   float m = mean();
   for (int i=0; i<this->getWidth(); i++) {
     for (int j=0; j<this->getHeight(); j++) {
-      float val = getValue(i, j) * (255/m);
+      float val = getValue(i, j) * (255);
       float az = alpha*modulus(i-getWidth()/2, getWidth()) + alpha/2;
       float el = alpha*modulus(j-getHeight()/2, getHeight()) + alpha/2;
       pcl::PointXYZRGB p;
@@ -306,7 +288,7 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
       p.x = -sign*radius*cos(el)*sin(az)+ox;
       p.y = -sign*radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
-      float color = val < 0 ? 0 : val;
+      float color = val;
       //color = color == 255 ? 255 : color;
       p.r = p.g = p.b = color;
       pc->points.push_back(p);
