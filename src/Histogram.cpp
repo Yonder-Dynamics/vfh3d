@@ -19,7 +19,7 @@ int clip(int x, int min, int max) {
 }
 
 Histogram::Histogram(float alpha,
-                     float ox, float oy, float oz):
+    float ox, float oy, float oz):
   alpha(alpha), ox(ox), oy(oy), oz(oz)
 {
   data = new float[getWidth() * getHeight()]();
@@ -41,11 +41,11 @@ void Histogram::addValue(float x, float y, float z, float val) {
 }
 
 void Histogram::addVoxel(float x, float y, float z, float val,
-                         float voxel_radius, float maxRange) {
+    float voxel_radius, float maxRange) {
   // For weight calculation
   float dist = sqrt(pow(x-ox, 2) +
-                    pow(y-oy, 2) +
-                    pow(z-oz, 2));
+      pow(y-oy, 2) +
+      pow(z-oz, 2));
   float enlargement = floor(asin(voxel_radius/dist)/alpha);
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
@@ -88,6 +88,42 @@ float Histogram::mean() {
   return s / getWidth() / getHeight();
 }
 
+float Histogram::std() {
+  float mean = this->mean();
+  float val, total;
+  for(int i=0; i<this->getWidth(); i++) {
+    for(int j=0; j<this->getHeight(); j++) {
+      val = this->getValue(i, j);
+      total += pow((val - mean), 2);
+    }
+  }
+
+  total /= (this->getWidth() * this->getHeight());
+  total = pow(total, 0.5);
+  return total;
+}
+
+float Histogram::getMeanArea() {
+  float radius = 1;
+
+  float area = 4*M_PI*pow(radius, 2);
+  return area/(this->getWidth() *  this->getHeight());
+}
+
+float Histogram::getArea(int elevation) {
+  float r1, r2, h1, h2, r, h;
+  float elevationF = ((getHeight()/2 - elevation) >= 0 ? elevation : abs(getHeight() - elevation));
+  h1 = cos(this->alpha * elevationF);
+  h2 = cos(this->alpha * (elevationF+1));
+  r1 = sin(this->alpha * elevationF);
+  r2 = sin(this->alpha * (elevationF+1));
+  
+  r = (r1+r2)/2;
+  h = (h1-h2);
+//  std::cout << "Radius is ------------: " << r << " Height is ---------: "<< h << "At elevation: " << elevationF<<std::endl;
+  return 2*M_PI*(r*h)/getWidth();
+}
+
 int Histogram::getI(float x, float y) {
   int i = modulus(floor(atan2(x-ox, y-oy)/alpha + getWidth()/2), getWidth());
   return i;
@@ -106,8 +142,8 @@ int Histogram::getJ(float x, float y, float z) {
 
 bool Histogram::isIgnored(float x, float y, float z, float ws) {
   float dist = sqrt(pow((x-ox), 2) +
-                    pow((y-oy), 2) +
-                    pow((z-oz), 2));
+      pow((y-oy), 2) +
+      pow((z-oz), 2));
   return dist > ws;
 }
 
@@ -145,7 +181,7 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
       p.y = -sign*radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
       float color = val < 0 ? 0 : val;
-      color = color > 255 ? 255 : color;
+      //color = color == 255 ? 255 : color;
       p.r = p.g = p.b = color;
       pc->points.push_back(p);
     }
