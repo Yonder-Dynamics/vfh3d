@@ -40,6 +40,8 @@ class Histogram {
   void checkTurning(float x, float y, float z, float val,
                     Vehicle v, float voxel_radius);
   std::vector<geometry_msgs::Pose> findPaths(int width, int height);
+  geometry_msgs::Pose optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, float goalHeading,
+                                  float goalWeight, float prevWeight, float headingWeight);
 
   std::string displayString();
 

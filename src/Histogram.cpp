@@ -16,23 +16,12 @@ Histogram::Histogram(float alpha,
 }
 
 int Histogram::getI(float x, float y) {
-  int i = modulus(floor(atan2(x-ox, y-oy)/alpha), getWidth());
-  return i;
+  return modulus(floor(atan2(x-ox, y-oy)/alpha), getWidth());
 }
 
 int Histogram::getJ(float x, float y, float z) {
   float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  //float j = modulus(-floor(atan2(z-oz, p)/alpha - getHeight()/2), getHeight());
-  //int j = floor(getHeight()/2 - atan2(z-oz, p)/alpha);
-  float at = (atan2(z-oz, p)+M_PI/2)/alpha;
-  //return clip(floor(((float)getHeight())/2 - at+0.5), 0, getHeight());
-  /*
-    if (at < 0) // modifications for the bottom half
-    return clip(floor(((float)getHeight())/2 - at -alpha*2), 0, getHeight()-1);
-    else // modifications for the top half
-    return clip(at, 0, getHeight());
-  */
-  return at;
+  return (atan2(z-oz, p)+M_PI/2)/alpha;
 }
 
 // j = 0 = top
@@ -40,7 +29,7 @@ float Histogram::getValue(int i, int j) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    std::cout << "HI1 " << i << ", " << j << std::endl;
+    //std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -48,7 +37,7 @@ float Histogram::getValue(int i, int j) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    std::cout << "HI2" << std::endl;
+    //std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -60,7 +49,7 @@ void Histogram::setValue(int i, int j, float val) {
   int az = modulus(i, getWidth());
   int el = clip(j, 0, getHeight()-1);
   if (j - el > 0) {
-    std::cout << "HI1 " << i << ", " << j << std::endl;
+    //std::cout << "HI1 " << i << ", " << j << std::endl;
     // if el overflows the top and goes over to the other side
     // j is negative
     // el is 0
@@ -68,7 +57,7 @@ void Histogram::setValue(int i, int j, float val) {
     az = modulus(az, getWidth());
   } else if (j - el > 0) {
     // if el overflows the bot and goes over to the other side
-    std::cout << "HI2" << std::endl;
+    //std::cout << "HI2" << std::endl;
     el = -(j-el);
     az = modulus(az+getWidth()/2, getWidth());
   }
@@ -209,6 +198,50 @@ std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
     }
   }
   return ps;
+}
+
+geometry_msgs::Pose Histogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, float goalHeading,
+                                           float goalWeight, float prevWeight, float headingWeight) {
+  std::vector<geometry_msgs::Pose> open = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
+  float vals[open.size()];
+  for (int i = 0; i < open.size(); i++) {
+    geometry_msgs::Pose * p = &open.at(i);
+    // Calculate difference between heading of path and the goal and vehicle
+    float vecPath[3] = {1,0,0};
+    auto ori = p->orientation; // orientation struct
+    float real[3] = {ori.x, ori.y, ori.z};
+    float v1[3];
+    mul(real, 2*dot(real, vecPath, 3), v1,  3);
+    float v2[3];
+    mul(vecPath, ori.w*ori.w - dot(real,real,3), v2, 3);
+    float v3[3];
+    cross(real, vecPath, v3);
+    float v4[3];
+    mul(v3, 2*ori.w, v4, 3);
+    float v5[3];
+    float res[3];
+    add(v1, v2, v5, 3);
+    add(v3, v5, res, 3);
+    float path_heading = atan2(res[1], res[0]);
+    float goal_diff = abs(goalHeading - path_heading);
+    float veh_diff = abs(v.heading - path_heading);
+    float prev_diff;
+    if (prevPath != NULL) {
+      float prev_diff_v[3];
+      float prevQuat[4] = {prevPath->orientation.x, prevPath->orientation.y,
+                          prevPath->orientation.z, prevPath->orientation.w};
+      float pathQuat[4] = {ori.x, ori.y, ori.z, ori.w};
+      mul(prevQuat, -1, prev_diff_v, 4);
+      add(prev_diff_v, pathQuat, prev_diff_v, 4);
+      prev_diff = sum(prev_diff_v, 4);
+    } else {
+      prev_diff = 0;
+    }
+    float value = goalWeight*goal_diff + prevWeight*prev_diff + headingWeight*veh_diff;
+    vals[i] = value;
+  }
+  int bestPath = maxInd(vals, open.size());
+  return open[bestPath];
 }
 
 float Histogram::mean() {

@@ -13,7 +13,7 @@ class OctomapProcessing {
   HistogramUpdate* hu;
   Vehicle vehicle;
   float maxRange;
-  ros::Publisher histogram_pub, pose_pub;
+  ros::Publisher histogram_pub, pose_pub, next_pose_pub;
   OctomapProcessing(float alpha, Vehicle v, float maxRange, ros::NodeHandle n);
   void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg);
 };
