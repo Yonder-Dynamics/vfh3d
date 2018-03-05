@@ -3,4 +3,5 @@
     <param name="max_depth" value="13" />
   </node>
   <!--<node name="vfh" pkg="vfh_rover" type="vfh_rover_node"/> -->
+  <node name="goal_pub" pkg="vfh_rover" type="goal_pub.py"/>
 </launch>

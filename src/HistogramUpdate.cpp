@@ -55,7 +55,7 @@ void HistogramUpdate::binarize(Histogram& primary, int range) {
 
   for(int j=0; j<primary.getHeight(); j++) {
     //    ratio = primary.getArea(j) / meanArea;
-    ratio = 1;  
+    ratio = 1;
     //std::cout << "Ratio: "<<ratio << "----------------" << std::endl;
     tLow = tLowB * ratio;
     tHigh = tHighB * ratio;

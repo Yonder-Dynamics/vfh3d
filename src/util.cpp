@@ -65,3 +65,5 @@ int maxInd(float* x, int count) {
   }
   return maxI;
 }
+
+//float headingDiff(float * 

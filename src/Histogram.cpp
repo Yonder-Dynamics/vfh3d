@@ -7,6 +7,10 @@
 #include <cmath>
 #include <pcl/point_types.h>
 #include <geometry_msgs/Pose.h>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
+using namespace Eigen;
 
 Histogram::Histogram(float alpha,
     float ox, float oy, float oz):
@@ -137,10 +141,10 @@ void Histogram::checkTurning(float x, float y, float z, float val,
   // Iterate over half possible ways the rover can move (then check left and right
   int j = getJ(x,y,z);
   int i = getI(x,y);
-  float turningLeftCenterX = v.turningRadiusR()*sin(v.heading);
-  float turningRightCenterX = -v.turningRadiusR()*sin(v.heading);
-  float turningLeftCenterY = v.turningRadiusL()*cos(v.heading);
-  float turningRightCenterY = -v.turningRadiusL()*cos(v.heading);
+  float turningLeftCenterX = v.turningRadiusR()*sin(v.getHeading());
+  float turningRightCenterX = -v.turningRadiusR()*sin(v.getHeading());
+  float turningLeftCenterY = v.turningRadiusL()*cos(v.getHeading());
+  float turningRightCenterY = -v.turningRadiusL()*cos(v.getHeading());
   float dr = sqrt(pow((turningRightCenterX - (x-ox)), 2) +
                   pow((turningRightCenterY - (x-ox)), 2));
   float dl = sqrt(pow((turningLeftCenterX - (x-ox)), 2) +
@@ -195,48 +199,36 @@ std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
   return ps;
 }
 
-geometry_msgs::Pose Histogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, float goalHeading,
+geometry_msgs::Pose Histogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
                                            float goalWeight, float prevWeight, float headingWeight) {
   std::vector<geometry_msgs::Pose> open = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
   float vals[open.size()];
+  float dx = goal.position.x - v.x;
+  float dy = goal.position.y - v.y;
+  float dz = goal.position.z - v.z;
+  Quaternionf goalQ =
+    AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
+    AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
+  Quaternionf prevQ;
+  if (prevPath != NULL) {
+    prevQ = Quaternionf(prevPath->orientation.w, prevPath->orientation.x,
+                        prevPath->orientation.y, prevPath->orientation.z);
+  }
   for (int i = 0; i < open.size(); i++) {
     geometry_msgs::Pose * p = &open.at(i);
-    // Calculate difference between heading of path and the goal and vehicle
-    float vecPath[3] = {1,0,0};
-    auto ori = p->orientation; // orientation struct
-    float real[3] = {ori.x, ori.y, ori.z};
-    float v1[3];
-    mul(real, 2*dot(real, vecPath, 3), v1,  3);
-    float v2[3];
-    mul(vecPath, ori.w*ori.w - dot(real,real,3), v2, 3);
-    float v3[3];
-    cross(real, vecPath, v3);
-    float v4[3];
-    mul(v3, 2*ori.w, v4, 3);
-    float v5[3];
-    float res[3];
-    add(v1, v2, v5, 3);
-    add(v3, v5, res, 3);
-    float path_heading = atan2(res[1], res[0]);
-    float goal_diff = abs(goalHeading - path_heading);
-    float veh_diff = abs(v.heading - path_heading);
-    float prev_diff;
-    if (prevPath != NULL) {
-      float prev_diff_v[3];
-      float prevQuat[4] = {prevPath->orientation.x, prevPath->orientation.y,
-                          prevPath->orientation.z, prevPath->orientation.w};
-      float pathQuat[4] = {ori.x, ori.y, ori.z, ori.w};
-      mul(prevQuat, -1, prev_diff_v, 4);
-      add(prev_diff_v, pathQuat, prev_diff_v, 4);
-      prev_diff = sum(prev_diff_v, 4);
-    } else {
-      prev_diff = 0;
-    }
-    float value = goalWeight*goal_diff + prevWeight*prev_diff + headingWeight*veh_diff;
-    vals[i] = value;
+    Quaternionf pathQ (p->orientation.w, p->orientation.x,
+                       p->orientation.y, p->orientation.z);
+    float prevDiff = pathQ.angularDistance(prevQ);
+    float goalDiff = pathQ.angularDistance(goalQ);
+    float headDiff = pathQ.angularDistance(v.orientation);
+    vals[i] = -prevDiff*prevWeight - goalDiff*goalWeight - headDiff*headingWeight;
   }
-  int bestPath = maxInd(vals, open.size());
-  return open[bestPath];
+  geometry_msgs::Pose bestPath = open[maxInd(vals, open.size())];
+
+  Quaternionf pathQ (bestPath.orientation.w, bestPath.orientation.x,
+                     bestPath.orientation.y, bestPath.orientation.z);
+  std::cout << pathQ.angularDistance(goalQ) << std::endl;
+  return bestPath;
 }
 
 float Histogram::mean() {
@@ -313,7 +305,7 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
   float m = mean();
   for (int i=0; i<this->getWidth(); i++) {
     for (int j=0; j<this->getHeight(); j++) {
-      float val = getValue(i, j) * (255);
+      float val = getValue(i, j) * (255/m);
       float az = alpha*modulus(i-getWidth()/2, getWidth()) + alpha/2;
       float el = alpha*modulus(j-getHeight()/2, getHeight()) + alpha/2;
       pcl::PointXYZRGB p;
@@ -321,8 +313,8 @@ RGBPointCloud::Ptr Histogram::displayCloud(float radius) {
       p.x = -sign*radius*cos(el)*sin(az)+ox;
       p.y = -sign*radius*cos(el)*cos(az)+oy;
       p.z = sign*radius*sin(el)+oz;
-      float color = val;
-      //color = color == 255 ? 255 : color;
+      float color = val < 0 ? 0 : val;
+      color = color >= 255 ? 255 : color;
       p.r = p.g = p.b = color;
       pc->points.push_back(p);
     }
