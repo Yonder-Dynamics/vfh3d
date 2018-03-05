@@ -1,6 +1,5 @@
 #include <vfh_rover/OctomapProcessing.h>
-#include <vfh_rover/HistogramUpdate.h>
-#include <vfh_rover/Histogram.h>
+#include <vfh_rover/VFHistogram.h>
 #include <octomap/octomap.h>
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
@@ -15,9 +14,8 @@ bool HAS_PROC = false; // temp var, only process once. For debugging
 
 OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
                                      float maxRange, ros::NodeHandle n) :
-  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false)
+  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha)
 {
-  this->hu = new HistogramUpdate(alpha);
   histogram_pub = n.advertise<sensor_msgs::PointCloud2>("histogram", 2);
   pose_pub = n.advertise<geometry_msgs::PoseArray>("open_poses", 2);
   next_pose_pub = n.advertise<geometry_msgs::PoseStamped>("nextPose", 2);
@@ -48,7 +46,8 @@ void OctomapProcessing::process() {
   for (float x=-5; x<5; x+=0.5) {
     // Build
     vehicle.x = x;
-    Histogram h = hu->build(tree, vehicle, maxRange);
+    VFHistogram h (tree, vehicle, maxRange, alpha);
+    //h.binarize(1);
     //hu->binarize(h, 1);
     //std::cout << h.displayString() << std::endl;
     // Disp histogram point cloud

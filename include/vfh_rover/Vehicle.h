@@ -2,10 +2,21 @@
 #include <octomap/math/Vector3.h>
 #include <algorithm>
 #include <Eigen/Geometry>
+#include <geometry_msgs/Pose.h>
+
+using namespace Eigen;
 
 struct Vehicle {
   float x, y, z, h, w, d, safety_radius;
-  Eigen::Quaternionf orientation;
+  Quaternionf orientation;
+
+  void setPose(geometry_msgs::Pose pose) {
+    x = pose.position.x;
+    y = pose.position.y;
+    z = pose.position.z;
+    orientation = Quaternionf(pose.orientation.w, pose.orientation.x,
+                              pose.orientation.y, pose.orientation.z);
+  }
 
   float getHeading() {
     orientation.normalize();

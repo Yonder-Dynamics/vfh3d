@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include <vfh_rover/OctomapProcessing.h>
-#include <vfh_rover/HistogramUpdate.h>
 #include <vfh_rover/Vehicle.h>
 #include <iostream>
 #include <geometry_msgs/PoseStamped.h>

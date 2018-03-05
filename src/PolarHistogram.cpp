@@ -1,5 +1,5 @@
 #include <math.h>
-#include <vfh_rover/Histogram.h>
+#include <vfh_rover/PolarHistogram.h>
 #include <vfh_rover/Vehicle.h>
 #include <string>
 #include <assert.h>
@@ -106,134 +106,10 @@ void Histogram::getValues(float* return_vals, int x, int y, int width, int heigh
   }
 }
 
-void Histogram::addVoxel(float x, float y, float z, float val) {
-  int az = getI(x, y);
-  int el = getJ(x, y, z);
-  setValue(az, el, getValue(az, el) + val);
-}
-
-void Histogram::addVoxel(float x, float y, float z, float val,
-    float voxel_radius, float maxRange) {
-  // For weight calculation
-  float dist = sqrt(pow(x-ox, 2) +
-      pow(y-oy, 2) +
-      pow(z-oz, 2));
-  float enlargement = floor(asin(voxel_radius/dist)/alpha);
-  float a = 0.5;
-  float b = 4*(a-1)/pow(maxRange-1, 2);
-  float h = val*val*(a-b*(dist-voxel_radius));
-
-  int bz = getI(x, y);
-  int be = getJ(x, y, z);
-  int voxelCellSize = 1; //(int)(enlargement/alpha); // divided by 2
-  int az,el;
-  addValues(h, bz-voxelCellSize, be-voxelCellSize, 2*voxelCellSize, 2*voxelCellSize);
-  /*
-  float gv[4*voxelCellSize*voxelCellSize];
-  getValues(gv, bz-voxelCellSize, be-voxelCellSize, 2*voxelCellSize, 2*voxelCellSize);
-  add(gv, h, gv, 4*voxelCellSize*voxelCellSize);
-  setValues(gv, bz-voxelCellSize, be-voxelCellSize, 2*voxelCellSize, 2*voxelCellSize);
-  */
-}
-
-void Histogram::checkTurning(float x, float y, float z, float val,
-                             Vehicle v, float voxel_radius) {
-  // Iterate over half possible ways the rover can move (then check left and right
-  int j = getJ(x,y,z);
-  int i = getI(x,y);
-  float turningLeftCenterX = v.turningRadiusR()*sin(v.getHeading());
-  float turningRightCenterX = -v.turningRadiusR()*sin(v.getHeading());
-  float turningLeftCenterY = v.turningRadiusL()*cos(v.getHeading());
-  float turningRightCenterY = -v.turningRadiusL()*cos(v.getHeading());
-  float dr = sqrt(pow((turningRightCenterX - (x-ox)), 2) +
-                  pow((turningRightCenterY - (x-ox)), 2));
-  float dl = sqrt(pow((turningLeftCenterX - (x-ox)), 2) +
-                  pow((turningLeftCenterY - (x-ox)), 2));
-  float rad = v.safety_radius+v.radius()+voxel_radius;
-  if (dr < v.turningRadiusR()+rad || dl < v.turningRadiusL()+rad)
-    addValue(i, j, val);
-}
-
-std::vector<geometry_msgs::Pose> Histogram::findPaths(int width, int height) {
-  float ret_vals[width*height];
-  std::vector<geometry_msgs::Pose> ps;
-  float az, el;
-  for (int i=0; i<getWidth(); i++) {
-    for (int j=0; j<getHeight(); j++) {
-      getValues(ret_vals, i, j, width, height);
-      /*
-      for (int i2=0; i2<width; i2++) {
-        for (int j2=0; j2<height; j2++) {
-          std::cout << ret_vals[j2*width+i2] << ", ";
-        }
-        std::cout << std::endl;
-      }
-      */
-      float s = sum(ret_vals, width*height);
-      //std::cout << s << std::endl;
-      if (abs(s) < 0.0001) {
-        az = -(i+(float)width/2-getWidth()/4)*alpha;
-        el = M_PI/2-(j+(float)height/2-1)*alpha;
-        //std::cout << el << ", " << az << std::endl;
-        geometry_msgs::Pose p;
-        // Abbreviations for the various angular functions
-        double cy = cos(az * 0.5);
-        double sy = sin(az * 0.5);
-        double cr = cos(0 * 0.5); // roll = 0
-        double sr = sin(0 * 0.5); // roll = 0
-        double cp = cos(el * 0.5);
-        double sp = sin(el * 0.5);
-
-        p.orientation.w = cy * cr * cp + sy * sr * sp;
-        p.orientation.x = cy * sr * cp - sy * cr * sp;
-        p.orientation.y = cy * cr * sp + sy * sr * cp;
-        p.orientation.z = sy * cr * cp - cy * sr * sp;
-
-        p.position.x = ox;
-        p.position.y = oy;
-        p.position.z = oz;
-        ps.push_back(p);
-      }
-    }
-  }
-  return ps;
-}
-
-geometry_msgs::Pose Histogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
-                                           float goalWeight, float prevWeight, float headingWeight) {
-  std::vector<geometry_msgs::Pose> open = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
-  float vals[open.size()];
-  float dx = goal.position.x - v.x;
-  float dy = goal.position.y - v.y;
-  float dz = goal.position.z - v.z;
-  Quaternionf goalQ =
-    AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
-    AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
-  Quaternionf prevQ;
-  if (prevPath != NULL) {
-    prevQ = Quaternionf(prevPath->orientation.w, prevPath->orientation.x,
-                        prevPath->orientation.y, prevPath->orientation.z);
-  }
-  for (int i = 0; i < open.size(); i++) {
-    geometry_msgs::Pose * p = &open.at(i);
-    Quaternionf pathQ (p->orientation.w, p->orientation.x,
-                       p->orientation.y, p->orientation.z);
-    float prevDiff = pathQ.angularDistance(prevQ);
-    float goalDiff = pathQ.angularDistance(goalQ);
-    float headDiff = pathQ.angularDistance(v.orientation);
-    vals[i] = -prevDiff*prevWeight - goalDiff*goalWeight - headDiff*headingWeight;
-  }
-  geometry_msgs::Pose bestPath = open[maxInd(vals, open.size())];
-
-  Quaternionf pathQ (bestPath.orientation.w, bestPath.orientation.x,
-                     bestPath.orientation.y, bestPath.orientation.z);
-  std::cout << pathQ.angularDistance(goalQ) << std::endl;
-  return bestPath;
-}
-
 float Histogram::mean() {
   return sum(data, getWidth()*getHeight()) / getHeight() / getWidth();
 }
+
 float Histogram::std() {
   float mean = this->mean();
   float val, total;
@@ -249,7 +125,6 @@ float Histogram::std() {
   total = pow(total, 0.5);
   return total;
 }
-
 
 float Histogram::getMeanArea() {
   float radius = 1;
@@ -272,13 +147,6 @@ float Histogram::getArea(int elevation) {
   return 2*M_PI*(r*h)/getWidth();
 }
 
-
-bool Histogram::isIgnored(float x, float y, float z, float ws) {
-  float dist = sqrt(pow((x-ox), 2) +
-      pow((y-oy), 2) +
-      pow((z-oz), 2));
-  return dist > ws;
-}
 
 int Histogram::getWidth() {
   return int(ceil((2*M_PI)/this->alpha));

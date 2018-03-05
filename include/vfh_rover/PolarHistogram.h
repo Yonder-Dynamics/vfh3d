@@ -21,7 +21,6 @@ class Histogram {
 
   int getWidth();
   int getHeight();
-  float getAlpha();
   float mean();
   float std();
   float getMeanArea();
@@ -35,21 +34,12 @@ class Histogram {
   void addValues(float val, int x, int y, int width, int height);
   void setValues(float* vals, int x, int y, int width, int height);
   void getValues(float* return_vals, int x, int y, int width, int height);
-  // For filling histogram
-  void addVoxel(float x, float y, float z, float val,
-                float voxel_radius, float maxRange);
-  void addVoxel(float x, float y, float z, float val);
-  void checkTurning(float x, float y, float z, float val,
-                    Vehicle v, float voxel_radius);
-  std::vector<geometry_msgs::Pose> findPaths(int width, int height);
-  geometry_msgs::Pose optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
-                                  float goalWeight, float prevWeight, float headingWeight);
 
   std::string displayString();
 
   RGBPointCloud::Ptr displayCloud(float radius);
 
- private:
+ public:
   float* data;
   float alpha, ox, oy, oz;
 };

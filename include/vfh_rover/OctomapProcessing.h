@@ -1,6 +1,5 @@
 #pragma once
 #include <vfh_rover/Vehicle.h>
-#include <vfh_rover/HistogramUpdate.h>
 #include <octomap/octomap.h>
 #include <octomap/math/Vector3.h>
 #include <octomap_msgs/Octomap.h>
@@ -11,9 +10,8 @@
 
 class OctomapProcessing {
  public:
-  HistogramUpdate* hu;
   Vehicle vehicle;
-  float maxRange;
+  float maxRange, alpha;
   bool gotGoal, gotOcto;
   boost::shared_ptr<octomap::OcTree> tree;
   geometry_msgs::Pose goal;
