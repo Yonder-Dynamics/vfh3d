@@ -9,16 +9,22 @@
 #include <unistd.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <tf/transform_listener.h>
 
 bool HAS_PROC = false; // temp var, only process once. For debugging
 
 OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
                                      float maxRange, ros::NodeHandle n) :
-  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha)
+  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha), prevPose(NULL)
 {
   histogram_pub = n.advertise<sensor_msgs::PointCloud2>("histogram", 2);
   pose_pub = n.advertise<geometry_msgs::PoseArray>("open_poses", 2);
-  next_pose_pub = n.advertise<geometry_msgs::PoseStamped>("nextPose", 2);
+  next_pose_pub = n.advertise<geometry_msgs::PoseStamped>("next_direction", 2);
+}
+
+void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+  std::cout << "Hi" << std::endl;
+  vehicle.setPose(msg->pose);
 }
 
 void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
@@ -40,37 +46,39 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
   }
 }
 
-void OctomapProcessing::process() {
+void OctomapProcessing::simulate() {
   HAS_PROC = true;
-  geometry_msgs::Pose * prevPose = NULL;
-  for (float x=-5; x<5; x+=0.5) {
-    // Build
-    vehicle.x = x;
-    VFHistogram h (tree, vehicle, maxRange, alpha);
-    //h.binarize(1);
-    //hu->binarize(h, 1);
-    //std::cout << h.displayString() << std::endl;
-    // Disp histogram point cloud
-    RGBPointCloud::Ptr pc = h.displayCloud(1);
-    sensor_msgs::PointCloud2 pc_msg;
-    pcl::toROSMsg(*pc, pc_msg);
-    pc_msg.header.frame_id = "map";
-    histogram_pub.publish(pc_msg);
-    // Disp string
-
-    // Disp found free positions
-    geometry_msgs::PoseArray pa;
-    pa.poses = h.findPaths(5, 4);
-    pa.header.frame_id = "map";
-    pose_pub.publish(pa);
-
-    // Disp next position
-    geometry_msgs::PoseStamped p;
-    p.pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0);
-    prevPose = &p.pose;
-    p.header.frame_id = "map";
-    next_pose_pub.publish(p);
-
+  for (float x=-5; x<15; x+=0.5) {
+    //vehicle.x = x;
+    process();
     usleep(1000*1000);
   }
+}
+
+void OctomapProcessing::process() {
+  // Build
+  VFHistogram h (tree, vehicle, maxRange, alpha);
+  h.binarize(1);
+  // Disp string
+  //std::cout << h.displayString() << std::endl;
+
+  // Disp histogram point cloud
+  RGBPointCloud::Ptr pc = h.displayCloud(1);
+  sensor_msgs::PointCloud2 pc_msg;
+  pcl::toROSMsg(*pc, pc_msg);
+  pc_msg.header.frame_id = "map";
+  histogram_pub.publish(pc_msg);
+
+  // Disp found free positions
+  geometry_msgs::PoseArray pa;
+  pa.poses = h.findPaths(5, 4);
+  pa.header.frame_id = "map";
+  pose_pub.publish(pa);
+
+  // Disp next position
+  geometry_msgs::PoseStamped p;
+  p.pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0);
+  prevPose = &p.pose;
+  p.header.frame_id = "map";
+  next_pose_pub.publish(p);
 }

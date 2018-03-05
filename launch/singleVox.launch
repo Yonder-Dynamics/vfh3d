@@ -5,4 +5,5 @@
     <remap from="cloud_in" to="testVox"/>
   </node>
   <node name="goal_pub" pkg="vfh_rover" type="goal_pub.py"/>
+  <node name="rover_sim" pkg="vfh_rover" type="simRover.py"/>
 </launch>

@@ -7,12 +7,15 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <tf/transform_listener.h>
 
 class OctomapProcessing {
  public:
   Vehicle vehicle;
   float maxRange, alpha;
   bool gotGoal, gotOcto;
+  tf::TransformListener listener;
+  geometry_msgs::Pose * prevPose;
   boost::shared_ptr<octomap::OcTree> tree;
   geometry_msgs::Pose goal;
   ros::Publisher histogram_pub, pose_pub, next_pose_pub;
@@ -20,6 +23,8 @@ class OctomapProcessing {
                     float maxRange, ros::NodeHandle n);
   void octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg);
   void goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
+  void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg);
   void process();
+  void simulate();
   float getHeading();
 };
