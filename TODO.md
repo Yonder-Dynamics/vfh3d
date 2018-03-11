@@ -1,0 +1,15 @@
+Fix voxel enlargment calculations
+Fix memory leaks
+Add elevation restriction
+Make unobserved values of the histogram occupied
+Behavioral stuff (backup when faced with no options)
+Turning radius tuning
+Test going around corner
+
+Test on physical shit
+
+Get filter working
+Drive around different surfaces to collect data
+Train ann, neural net LSTM accomodates terrain changes
+Change xbox controls to use neural net
+Start to self driving

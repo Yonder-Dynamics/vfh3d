@@ -24,6 +24,7 @@ OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
 }
 
 void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
+  std::cout << msg << std::endl;
   vehicle.setPose(msg->pose);
 }
 
@@ -61,7 +62,7 @@ void OctomapProcessing::process() {
   h.binarize(1);
 
   COUNT++;
-  if(COUNT == 10)
+  if(COUNT == 20)
     exit(0);
   // Disp string
   //std::cout << h.displayString() << std::endl;

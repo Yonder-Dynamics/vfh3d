@@ -59,13 +59,15 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
       pow(y-oy, 2) +
       pow(z-oz, 2));
   float enlargement = floor(asin(voxel_radius/dist)/alpha);
+  // Calc voxel weight
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
   float h = val*val*(a-b*(dist-voxel_radius));
 
   int bz = getI(x, y);
   int be = getJ(x, y, z);
-  int voxelCellSize = 1; //(int)(enlargement/alpha); // divided by 2
+  int voxelCellSize = (int)(enlargement/alpha); // divided by 2
+  std::cout << voxelCellSize << std::endl;
   int az,el;
   addValues(h, bz-voxelCellSize, be-voxelCellSize, 2*voxelCellSize, 2*voxelCellSize);
   /*
