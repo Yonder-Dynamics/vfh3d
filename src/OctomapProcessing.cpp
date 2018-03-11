@@ -12,6 +12,7 @@
 #include <tf/transform_listener.h>
 
 bool HAS_PROC = false; // temp var, only process once. For debugging
+static int COUNT = 0;
 
 OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
         float maxRange, ros::NodeHandle n) :
@@ -44,6 +45,7 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
     if (not HAS_PROC && gotGoal) {
         process();
     }
+    delete(tree);
 }
 
 void OctomapProcessing::simulate() {
@@ -59,6 +61,10 @@ void OctomapProcessing::process() {
     // Build
     VFHistogram h (tree, vehicle, maxRange, alpha);
     h.binarize(1);
+
+    COUNT++;
+    if(COUNT == 10)
+        exit(0);
     // Disp string
     //std::cout << h.displayString() << std::endl;
 
