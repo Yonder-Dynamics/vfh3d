@@ -14,17 +14,16 @@
 bool HAS_PROC = false; // temp var, only process once. For debugging
 
 OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
-                                     float maxRange, ros::NodeHandle n) :
-  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha), prevPose(NULL)
+        float maxRange, ros::NodeHandle n) :
+    vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha), prevPose(NULL)
 {
-  histogram_pub = n.advertise<sensor_msgs::PointCloud2>("histogram", 2);
-  pose_pub = n.advertise<geometry_msgs::PoseArray>("open_poses", 2);
-  next_pose_pub = n.advertise<geometry_msgs::PoseStamped>("next_direction", 2);
+    histogram_pub = n.advertise<sensor_msgs::PointCloud2>("histogram", 2);
+    pose_pub = n.advertise<geometry_msgs::PoseArray>("open_poses", 2);
+    next_pose_pub = n.advertise<geometry_msgs::PoseStamped>("next_direction", 2);
 }
 
 void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-  std::cout << "Hi" << std::endl;
-  vehicle.setPose(msg->pose);
+    vehicle.setPose(msg->pose);
 }
 
 void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
@@ -45,12 +44,12 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
 }
 
 void OctomapProcessing::simulate() {
-  HAS_PROC = true;
-  for (float x=-5; x<15; x+=0.5) {
-    //vehicle.x = x;
-    process();
-    usleep(1000*1000);
-  }
+    HAS_PROC = true;
+    for (float x=-5; x<15; x+=0.5) {
+        //vehicle.x = x;
+        process();
+        usleep(1000*1000*1000);
+    }
 }
 
 void OctomapProcessing::process() {
@@ -77,10 +76,8 @@ void OctomapProcessing::process() {
   geometry_msgs::PoseStamped p;
   geometry_msgs::Pose* next_pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0, 1);
   std::cout << "Next pose " << next_pose << std::endl;
-  if (next_pose == NULL) {
-    std::cout << "No pose" << std::endl;
+  if (next_pose == NULL)
     return;
-  }
   p.pose = *next_pose;
   prevPose = next_pose;
   p.header.frame_id = "map";

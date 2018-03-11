@@ -169,7 +169,6 @@ geometry_msgs::Pose* VFHistogram::optimalPath(geometry_msgs::Pose* prevPath, Veh
 
   Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
                      bestPath->orientation.y, bestPath->orientation.z);
-  std::cout << bestPath << std::endl;
   return bestPath;
 }
 
@@ -192,6 +191,8 @@ void VFHistogram::binarize(int range) {
       if(val > tHigh)
         setValue(i, j, 1.0);
       else if(val < tLow)
+        setValue(i, j, 0.0);
+    else if(val == 0.0)
         setValue(i, j, 0.0);
       else
         setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);
