@@ -139,7 +139,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
 }
 
 geometry_msgs::Pose VFHistogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
-                                           float goalWeight, float prevWeight, float headingWeight) {
+                                           float goalWeight, float headingWeight, float prevWeight) {
   std::vector<geometry_msgs::Pose> open = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
   float vals[open.size()];
   float dx = goal.position.x - v.x;
@@ -189,6 +189,8 @@ void VFHistogram::binarize(int range) {
       if(val > tHigh)
         setValue(i, j, 1.0);
       else if(val < tLow)
+        setValue(i, j, 0.0);
+    else if(val == 0.0)
         setValue(i, j, 0.0);
       else
         setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);

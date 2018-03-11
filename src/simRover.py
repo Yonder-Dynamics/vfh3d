@@ -10,7 +10,7 @@ def init():
     def callback(msg):
         print(msg)
         q = Quaternion(msg.pose.orientation.w,msg.pose.orientation.x,
-                       msg.pose.orientation.y,msg.pose.orientation.z)
+                msg.pose.orientation.y,msg.pose.orientation.z)
         diff = q.rotate(np.array([1, 0, 0]))
         nextPose = PoseStamped()
         nextPose.pose.position.x = msg.pose.position.x + diff[0]
