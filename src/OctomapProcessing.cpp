@@ -43,7 +43,7 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
   if (not HAS_PROC && gotGoal) {
     process();
   }
-  delete(tree);
+  delete(atree);
 }
 
 void OctomapProcessing::simulate() {
