@@ -27,6 +27,6 @@ class VFHistogram : public Histogram {
                     Vehicle v, float voxel_radius);
   void binarize(int range);
   std::vector<geometry_msgs::Pose> findPaths(int width, int height);
-  geometry_msgs::Pose optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
-                                  float goalWeight, float prevWeight, float headingWeight);
+  geometry_msgs::Pose* optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
+                                   float goalWeight, float prevWeight, float headingWeight, float goal_radius);
 };

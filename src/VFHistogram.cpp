@@ -101,14 +101,6 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
   for (int i=0; i<getWidth(); i++) {
     for (int j=0; j<getHeight(); j++) {
       getValues(ret_vals, i, j, width, height);
-      /*
-      for (int i2=0; i2<width; i2++) {
-        for (int j2=0; j2<height; j2++) {
-          std::cout << ret_vals[j2*width+i2] << ", ";
-        }
-        std::cout << std::endl;
-      }
-      */
       float s = sum(ret_vals, width*height);
       //std::cout << s << std::endl;
       if (abs(s) < 0.0001) {
@@ -138,13 +130,24 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
   return ps;
 }
 
-geometry_msgs::Pose VFHistogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
-                                           float goalWeight, float prevWeight, float headingWeight) {
+geometry_msgs::Pose* VFHistogram::optimalPath(geometry_msgs::Pose* prevPath, Vehicle v, geometry_msgs::Pose goal,
+                                              float goalWeight, float prevWeight, float headingWeight,
+                                              float goal_radius) {
   std::vector<geometry_msgs::Pose> open = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
+  // If no open poses are found
+  if (open.size() == 0) {
+    std::cout << "No open positions" << std::endl;
+    return NULL;
+  }
   float vals[open.size()];
   float dx = goal.position.x - v.x;
   float dy = goal.position.y - v.y;
   float dz = goal.position.z - v.z;
+  // If we are at our goal
+  if (sqrt(dx*dx+dy*dy+dz*dz) < goal_radius) {
+    std::cout << "Reached Goal" << std::endl;
+    return NULL;
+  }
   Quaternionf goalQ =
     AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
     AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
@@ -162,11 +165,11 @@ geometry_msgs::Pose VFHistogram::optimalPath(geometry_msgs::Pose* prevPath, Vehi
     float headDiff = pathQ.angularDistance(v.orientation);
     vals[i] = -prevDiff*prevWeight - goalDiff*goalWeight - headDiff*headingWeight;
   }
-  geometry_msgs::Pose bestPath = open[maxInd(vals, open.size())];
+  geometry_msgs::Pose* bestPath = &open[maxInd(vals, open.size())];
 
-  Quaternionf pathQ (bestPath.orientation.w, bestPath.orientation.x,
-                     bestPath.orientation.y, bestPath.orientation.z);
-  std::cout << pathQ.angularDistance(goalQ) << std::endl;
+  Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
+                     bestPath->orientation.y, bestPath->orientation.z);
+  std::cout << bestPath << std::endl;
   return bestPath;
 }
 

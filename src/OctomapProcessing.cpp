@@ -30,14 +30,12 @@ void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr&
 void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
   goal = msg->pose;
   gotGoal = true;
-  std::cout << "Got goal" << std::endl;
   if (not HAS_PROC && gotOcto) {
     process();
   }
 }
 
 void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
-  std::cout << "Got octomap" << std::endl;
   octomap::AbstractOcTree* atree = octomap_msgs::msgToMap(*msg);
   tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
   gotOcto = true;
@@ -58,7 +56,7 @@ void OctomapProcessing::simulate() {
 void OctomapProcessing::process() {
   // Build
   VFHistogram h (tree, vehicle, maxRange, alpha);
-  h.binarize(1);
+  //h.binarize(1);
   // Disp string
   //std::cout << h.displayString() << std::endl;
 
@@ -77,8 +75,14 @@ void OctomapProcessing::process() {
 
   // Disp next position
   geometry_msgs::PoseStamped p;
-  p.pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0);
-  prevPose = &p.pose;
+  geometry_msgs::Pose* next_pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0, 1);
+  std::cout << "Next pose " << next_pose << std::endl;
+  if (next_pose == NULL) {
+    std::cout << "No pose" << std::endl;
+    return;
+  }
+  p.pose = *next_pose;
+  prevPose = next_pose;
   p.header.frame_id = "map";
   next_pose_pub.publish(p);
 }

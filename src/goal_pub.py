@@ -7,7 +7,7 @@ def init():
     pub = rospy.Publisher("/goal", PoseStamped, queue_size=10)
     rate = rospy.Rate(1)
     goal = PoseStamped()
-    goal.pose.position.x = 10
+    goal.pose.position.x = 30
     goal.pose.position.y = 0
     goal.pose.position.z = 0
     goal.pose.orientation.w = 1
