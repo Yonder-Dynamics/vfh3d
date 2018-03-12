@@ -1,5 +1,5 @@
 #pragma once
 
 struct PathParams {
-  float goalWeight, prevWeight, headingWeight, goal_radius;
+  float goalWeight, prevWeight, headingWeight, elevationWeight, goal_radius;
 };

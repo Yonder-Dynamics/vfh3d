@@ -1,13 +1,13 @@
 Fix voxel enlargment calculations
 Fix memory leaks
 ---Fix binarization---
-Add elevation restriction
----Make unobserved values of the histogram occupied---
+---Add elevation restriction---
+---Make unobserved values of the histogram occupied----
 Behavioral stuff (backup when faced with no options)
-Turning radius tuning
 Test going around corner
 
 Test on physical shit
+Turning radius tuning
 
 Get filter working
 Drive around different surfaces to collect data

@@ -107,6 +107,7 @@ void VFHistogram::checkTurning(float x, float y, float z, float val,
     addValue(i, j, val);
 }
 
+// Determine unoccupied paths
 std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
   float ret_vals[width*height];
   std::vector<geometry_msgs::Pose> ps;
@@ -126,6 +127,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
         az = -(i+(float)width/2-getWidth()/4)*alpha;
         el = M_PI/2-(j+(float)height/2-1)*alpha;
         geometry_msgs::Pose p;
+        // Conversion to quaternion ripped from wikipedia
         // Abbreviations for the various angular functions
         double cy = cos(az * 0.5);
         double sy = sin(az * 0.5);
@@ -149,13 +151,14 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
   return ps;
 }
 
+// Choose a path from a list of paths
 geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle v, geometry_msgs::Pose goal, PathParams p, std::vector<geometry_msgs::Pose>* openPoses) {
-  //std::vector<geometry_msgs::Pose> openPoses = findPaths(int(v.safety_radius+v.w), int(v.safety_radius+v.h));
   // If no openPoses poses are found
   if (openPoses->size() == 0) {
     std::cout << "No open positions" << std::endl;
     return NULL;
   }
+  // Difference to goal
   float vals[openPoses->size()];
   float dx = goal.position.x - v.x;
   float dy = goal.position.y - v.y;
@@ -165,29 +168,42 @@ geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle v, geometry_msgs::Pose goa
     std::cout << "Reached Goal" << std::endl;
     return NULL;
   }
+  // Find angle to goal
   Quaternionf goalQ =
     AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
     AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
+  // Calculate angle to previous path
   Quaternionf prevQ;
   if (v.prevHeading != NULL) {
-    prevQ = Quaternionf(v.prevHeading->orientation.w, v.prevHeading->orientation.x,
-                        v.prevHeading->orientation.y, v.prevHeading->orientation.z);
+    prevQ = Quaternionf(v.prevHeading->orientation.w,
+                        v.prevHeading->orientation.x,
+                        v.prevHeading->orientation.y,
+                        v.prevHeading->orientation.z);
   }
+  // Iterate through each goal and calculate a score
   for (int i = 0; i < openPoses->size(); i++) {
+    // Convert to quaternion
     geometry_msgs::Pose * path = &openPoses->at(i);
     Quaternionf pathQ (path->orientation.w, path->orientation.x,
                        path->orientation.y, path->orientation.z);
+    // Calc each difference score
     float prevDiff = pathQ.angularDistance(prevQ);
     float goalDiff = pathQ.angularDistance(goalQ);
     float headDiff = pathQ.angularDistance(v.orientation);
-    vals[i] = -prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight;
+    // Calc elevation of path
+    float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0];
+    // Weigh incline
+    float elScore = abs(el)*p.elevationWeight;
+    // Check bounds
+    if (el > v.maxIncline || el < v.minIncline)
+      elScore = 999;
+    vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore;
   }
-  std::cout << maxInd(vals, openPoses->size()) << std::endl;
-  std::cout << openPoses->size() << std::endl;
+  // Return best path
   geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
 
-  Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
-                     bestPath->orientation.y, bestPath->orientation.z);
+  //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
+  //                   bestPath->orientation.y, bestPath->orientation.z);
   return bestPath;
 }
 
@@ -197,7 +213,7 @@ void VFHistogram::binarize(int range) {
   tHighB = mean() + (range*std());
   tLowB = mean() - (range*std());
 
-  std::cout << "Thresholds: "<<tHighB << "---------------" << tLowB << std::endl;
+  //std::cout << "Thresholds: "<<tHighB << "---------------" << tLowB << std::endl;
 
   for(int j=0; j<getHeight(); j++) {
     //    ratio = primary.getArea(j) / meanArea;
