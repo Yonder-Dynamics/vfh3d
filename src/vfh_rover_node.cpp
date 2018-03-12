@@ -12,7 +12,7 @@ int main(int argc, char ** argv) {
   ros::NodeHandle n;
 
   Vehicle v = {-5,0,1, 0.5,0.5,0.7, 0.1, M_PI/8,-M_PI/8};
-  OctomapProcessing op (M_PI/30, v, 3, n);
+  OctomapProcessing op (M_PI/40, v, 3, n);
   ros::Subscriber sub1 = n.subscribe("/octomap_full", 3, &OctomapProcessing::octomapCallback, &op);
   ros::Subscriber sub2 = n.subscribe("/goal", 3, &OctomapProcessing::goalCallback, &op);
   ros::Subscriber sub3 = n.subscribe("/vehiclePose", 3, &OctomapProcessing::poseCallback, &op);

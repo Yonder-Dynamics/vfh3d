@@ -1,4 +1,4 @@
-Fix voxel enlargment calculations
+---Fix voxel enlargment calculations---
 Fix memory leaks
 ---Fix binarization---
 ---Add elevation restriction---

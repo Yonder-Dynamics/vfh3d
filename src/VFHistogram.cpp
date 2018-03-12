@@ -28,22 +28,8 @@ VFHistogram::VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
       v.max().z()+maxRange);
 
   // init variables for calculations
-  float res = tree->getResolution();
-  float rad = (res)+v.radius()+v.safety_radius; // voxel radius
+  float rad = tree->getResolution()+v.radius()+v.safety_radius; // voxel radius
   double resolution = 0.05;
-
-  /*
-  for (double ix = min.x(); ix < max.x(); ix += resolution)
-    for (double iy = min.y(); iy < max.y(); iy += resolution)
-      for (double iz = min.z(); iz < max.z(); iz += resolution) {
-        tree::NodeType * node = tree->search(ix,iy,iz);
-        if (!node) {
-          //This cell is unknown
-        } else {
-          if (node->get
-        }
-      }
-  */
 
   // Add voxels to tree
   for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 14),
@@ -75,7 +61,8 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
   float dist = sqrt(pow(x-ox, 2) +
       pow(y-oy, 2) +
       pow(z-oz, 2));
-  float enlargement = floor(asin(voxel_radius/dist)/alpha);
+  float enlargement = asin(voxel_radius/dist);
+  //float enlargement = degrees*M_PI/180;
   // Calc voxel weight
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
@@ -83,10 +70,10 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
 
   int bz = getI(x, y);
   int be = getJ(x, y, z);
-  int voxelCellSize = 1;//(int)(enlargement/alpha); // divided by 2
-  //std::cout << "Voxel Cell Size: " << voxelCellSize << std::endl;
+  int voxelCellSize = int(enlargement/alpha); // divided by 2
   int az,el;
-  addValues(h, bz-voxelCellSize, be-voxelCellSize, 2*voxelCellSize, 2*voxelCellSize);
+  addValues(h, bz-voxelCellSize, be-voxelCellSize,
+            2*voxelCellSize, 2*voxelCellSize);
 }
 
 void VFHistogram::checkTurning(float x, float y, float z, float val,

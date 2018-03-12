@@ -25,7 +25,6 @@ OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
 }
 
 void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
-  std::cout << msg << std::endl;
   vehicle.setPose(msg->pose);
 }
 
@@ -38,7 +37,6 @@ void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr&
 }
 
 void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
-  std::cout << "Got octomap" << std::endl;
   octomap::AbstractOcTree* atree = octomap_msgs::msgToMap(*msg);
   tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
   gotOcto = true;
@@ -60,7 +58,7 @@ void OctomapProcessing::simulate() {
 void OctomapProcessing::process() {
   // Build
   VFHistogram h (tree, vehicle, maxRange, alpha);
-  std::cout << h.displayString() << std::endl;
+  //std::cout << h.displayString() << std::endl;
   h.binarize(1);
 
   COUNT++;
