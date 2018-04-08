@@ -15,7 +15,6 @@ class OctomapProcessing {
   float maxRange, alpha;
   bool gotGoal, gotOcto;
   tf::TransformListener listener;
-  geometry_msgs::Pose * prevPose;
   boost::shared_ptr<octomap::OcTree> tree;
   geometry_msgs::Pose goal;
   ros::Publisher histogram_pub, pose_pub, next_pose_pub;

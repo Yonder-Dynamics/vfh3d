@@ -7,8 +7,10 @@
 using namespace Eigen;
 
 struct Vehicle {
-  float x, y, z, h, w, d, safety_radius;
+  float x, y, z, h, w, d, safety_radius; // meters
+  float maxIncline, minIncline; // radians
   Quaternionf orientation;
+  geometry_msgs::Pose* prevHeading;
 
   void setPose(geometry_msgs::Pose pose) {
     x = pose.position.x;

@@ -1,5 +1,6 @@
 #include <vfh_rover/OctomapProcessing.h>
 #include <vfh_rover/VFHistogram.h>
+#include <vfh_rover/PathParams.h>
 #include <octomap/octomap.h>
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
@@ -16,7 +17,7 @@ static int COUNT = 0;
 
 OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
     float maxRange, ros::NodeHandle n) :
-  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha), prevPose(NULL)
+  vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha)
 {
   histogram_pub = n.advertise<sensor_msgs::PointCloud2>("histogram", 2);
   pose_pub = n.advertise<geometry_msgs::PoseArray>("open_poses", 2);
@@ -36,7 +37,6 @@ void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr&
 }
 
 void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
-  std::cout << "Got octomap" << std::endl;
   octomap::AbstractOcTree* atree = octomap_msgs::msgToMap(*msg);
   tree = boost::make_shared<octomap::OcTree>(*(octomap::OcTree *)atree);
   gotOcto = true;
@@ -58,13 +58,13 @@ void OctomapProcessing::simulate() {
 void OctomapProcessing::process() {
   // Build
   VFHistogram h (tree, vehicle, maxRange, alpha);
+  //std::cout << h.displayString() << std::endl;
   h.binarize(1);
 
   COUNT++;
-  if(COUNT == 10)
+  if(COUNT == 20)
     exit(0);
   // Disp string
-  //std::cout << h.displayString() << std::endl;
   // Disp histogram point cloud
 
   RGBPointCloud::Ptr pc = h.displayCloud(1);
@@ -75,18 +75,24 @@ void OctomapProcessing::process() {
 
   // Disp found free positions
   geometry_msgs::PoseArray pa;
-  pa.poses = h.findPaths(5, 4);
+  //pa.poses = h.findPaths(5, 4);
+  pa.poses = h.findPaths(int(ceil((vehicle.safety_radius+vehicle.w)/alpha)),
+                         int(ceil((vehicle.safety_radius+vehicle.h)/alpha)));
   pa.header.frame_id = "map";
   pose_pub.publish(pa);
 
   // Disp next position
   geometry_msgs::PoseStamped p;
-  geometry_msgs::Pose* next_pose = h.optimalPath(prevPose, vehicle, goal, 1, 0, 0, 1);
-  std::cout << "Next pose " << next_pose << std::endl;
+  PathParams params;
+  params.goalWeight = 1;
+  params.prevWeight = 0;
+  params.headingWeight = 0;
+  params.goal_radius = 1;
+  geometry_msgs::Pose* next_pose = h.optimalPath(vehicle, goal, params, &pa.poses);
   if (next_pose == NULL)
     return;
   p.pose = *next_pose;
-  prevPose = next_pose;
+  vehicle.prevHeading = next_pose;
   p.header.frame_id = "map";
   next_pose_pub.publish(p);
   delete(h);
