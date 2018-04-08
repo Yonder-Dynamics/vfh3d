@@ -16,7 +16,6 @@ class VFHistogram : public Histogram {
   /** Constructor with width and height parameters **/
   VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
               float maxRange, float alpha);
-
   bool isIgnored(float x, float y, float z, float ws);
   float getArea(int elevation);
   // For filling histogram

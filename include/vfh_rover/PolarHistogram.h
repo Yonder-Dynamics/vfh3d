@@ -15,6 +15,10 @@ class Histogram {
   /** Constructor with width and height parameters **/
   Histogram(float alpha, float ox, float oy, float oz);
 
+  ~Histogram() {
+    delete(data);
+  }
+
   int getI(float x, float y);
   int getJ(float x, float y, float z);
   bool isIgnored(float x, float y, float z, float ws);

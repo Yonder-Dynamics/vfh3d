@@ -89,4 +89,5 @@ void OctomapProcessing::process() {
   prevPose = next_pose;
   p.header.frame_id = "map";
   next_pose_pub.publish(p);
+  delete(h);
 }
