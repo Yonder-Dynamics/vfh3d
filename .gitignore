@@ -13,6 +13,9 @@
 *.gch
 *.pch
 
+# Octomaps
+*.bt
+
 # Compiled Dynamic libraries
 *.so
 *.dylib
