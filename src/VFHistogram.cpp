@@ -157,12 +157,10 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       return NULL;
     }
     // Find angle to goal
-    std::cout << "Break 1" << std::endl;
     Quaternionf goalQ =
       AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
       AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
     // Calculate angle to previous path
-    std::cout << "Break 2" << std::endl;
     Quaternionf prevQ;
     
     if (v.prevHeading != NULL && v.prevSet == true) {
@@ -171,11 +169,9 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
           v.prevHeading->orientation.y,
           v.prevHeading->orientation.z);
     }
-    std::cout << "Break 3" << std::endl;
     // Iterate through each goal and calculate a score
     for (int i = 0; i < openPoses->size(); i++) {
       // Convert to quaternion
-      std::cout << "Break 4" <<" " <<i << std::endl;
       geometry_msgs::Pose * path = &openPoses->at(i);
       Quaternionf pathQ (path->orientation.w, path->orientation.x,
           path->orientation.y, path->orientation.z);
@@ -189,19 +185,18 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       float headDiff = pathQ.angularDistance(v.orientation);
       // Calc elevation of path
       float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0];
+      std::cout <<"Elevation: " <<el << std::endl;
       // Weigh incline
-      float elScore = abs(el)*p.elevationWeight;
+      float elScore = ((M_PI/2) - el)*p.elevationWeight;
       // Check bounds
-      if (el > v.maxIncline || el < v.minIncline)
-        elScore = 999;
-      vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore;
+      //if (el > v.maxIncline || el < v.minIncline)
+        //elScore = 999;
+      vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - abs(elScore);
     }
     // Return best path
-    std::cout << "Break 5" << std::endl;
     geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
     v.prevSet = true;
     v.prevHeading = bestPath;
-    std::cout << "Break 6" << std::endl;
 
     //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
     //                   bestPath->orientation.y, bestPath->orientation.z);

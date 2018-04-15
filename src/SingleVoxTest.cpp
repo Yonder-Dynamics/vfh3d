@@ -13,8 +13,8 @@ RGBPointCloud::Ptr buildPC() {
   pcl::PointXYZRGB p;
   RGBPointCloud::Ptr pc (new RGBPointCloud);
 
-  for(float i=-100; i<100; i++) {
-    for(float j=-100; j<100; j++) {
+  for(float i=-500; i<500; i++) {
+    for(float j=-500; j<500; j++) {
      // for(float k=0; k<100; k++){
         p.x = i/30;
         p.y = j/30;
@@ -24,7 +24,36 @@ RGBPointCloud::Ptr buildPC() {
      // }
     }
   }
-
+for(float i=-20; i<20; i++) {
+    for(float j=120; j<160; j++) {
+      for(float k=0; k<30; k++) {
+        p.x = i/30;
+        p.y = j/30;
+        p.z = k/30;
+        pc->points.push_back(p);
+      }
+    }
+  }
+  for(float i=-20; i<20; i++) {
+    for(float j=-20; j<20; j++) {
+      for(float k=0; k<30; k++) {
+        p.x = i/30;
+        p.y = j/30;
+        p.z = k/30;
+        pc->points.push_back(p);
+      }
+    }
+  }
+  for(float i=100; i<200; i++) {
+    for(float j=-200; j<200; j++) {
+      for(float k=0; k<(i*2)-200; k++) {
+        p.x = i/30;
+        p.y = j/30;
+        p.z = k/30;
+        pc->points.push_back(p);
+      }
+    }
+  }
   return pc;
 }
 
