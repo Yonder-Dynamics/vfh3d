@@ -14,7 +14,7 @@
 using namespace Eigen;
 
 VFHistogram::VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
-                         float maxRange, float alpha) :
+    float maxRange, float alpha) :
   PolarHistogram(alpha, v.x, v.y, v.z)
 {
   for (int i = 0; i < getWidth() * getHeight(); i++) {
@@ -29,7 +29,7 @@ VFHistogram::VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
 
   // init variables for calculations
   float rad = tree->getResolution()+v.radius()+v.safety_radius; // voxel radius
-  double resolution = 0.05;
+  //double resolution = 0.05;
 
   // Add voxels to tree
   for (octomap::OcTree::leaf_bbx_iterator it = tree->begin_leafs_bbx(min, max, 14),
@@ -66,18 +66,18 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
   // Calc voxel weight
   float a = 0.5;
   float b = 4*(a-1)/pow(maxRange-1, 2);
-  float h = val*val*(a-b*(dist-voxel_radius));
+  float h = val*val*(a-b*(dist));
 
   int bz = getI(x, y);
   int be = getJ(x, y, z);
   int voxelCellSize = int(enlargement/alpha); // divided by 2
   int az,el;
   addValues(h, bz-voxelCellSize, be-voxelCellSize,
-            2*voxelCellSize, 2*voxelCellSize);
+      2*voxelCellSize, 2*voxelCellSize);
 }
 
 void VFHistogram::checkTurning(float x, float y, float z, float val,
-                             Vehicle v, float voxel_radius) {
+    Vehicle v, float voxel_radius) {
   // Iterate over half possible ways the rover can move (then check left and right
   int j = getJ(x,y,z);
   int i = getI(x,y);
@@ -86,10 +86,11 @@ void VFHistogram::checkTurning(float x, float y, float z, float val,
   float turningLeftCenterY = v.turningRadiusL()*cos(v.getHeading());
   float turningRightCenterY = -v.turningRadiusL()*cos(v.getHeading());
   float dr = sqrt(pow((turningRightCenterX - (x-ox)), 2) +
-                  pow((turningRightCenterY - (x-ox)), 2));
+      pow((turningRightCenterY - (x-ox)), 2));
   float dl = sqrt(pow((turningLeftCenterX - (x-ox)), 2) +
-                  pow((turningLeftCenterY - (x-ox)), 2));
-  float rad = v.safety_radius+v.radius()+voxel_radius;
+      pow((turningLeftCenterY - (x-ox)), 2));
+  //float rad = v.safety_radius+v.radius()+voxel_radius;
+  float rad = voxel_radius;
   if (dr < v.turningRadiusR()+rad || dl < v.turningRadiusL()+rad)
     addValue(i, j, val);
 }
@@ -104,8 +105,8 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       getValues(ret_vals, i, j, width, height);
       //float s = sum(ret_vals, width*height);
       bool empty = true;
-      for (int i = 0; i < width*height; i++) {
-        if (abs(ret_vals[i]) > 0.0001 || ret_vals[i] != ret_vals[i])
+      for (int k = 0; k < width*height; k++) {
+        if (abs(ret_vals[k]) > 0.0001 || ret_vals[k] != ret_vals[k])
           empty = false;
       }
       //std::cout << s << std::endl;
@@ -134,99 +135,112 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
         ps.push_back(p);
       }
     }
+    }
+    return ps;
   }
-  return ps;
-}
 
-// Choose a path from a list of paths
-geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle v, geometry_msgs::Pose goal, PathParams p, std::vector<geometry_msgs::Pose>* openPoses) {
-  // If no openPoses poses are found
-  if (openPoses->size() == 0) {
-    std::cout << "No open positions" << std::endl;
-    return NULL;
-  }
-  // Difference to goal
-  float vals[openPoses->size()];
-  float dx = goal.position.x - v.x;
-  float dy = goal.position.y - v.y;
-  float dz = goal.position.z - v.z;
-  // If we are at our goal
-  if (sqrt(dx*dx+dy*dy+dz*dz) < p.goal_radius) {
-    std::cout << "Reached Goal" << std::endl;
-    return NULL;
-  }
-  // Find angle to goal
-  Quaternionf goalQ =
-    AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
-    AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
-  // Calculate angle to previous path
-  Quaternionf prevQ;
-  if (v.prevHeading != NULL) {
-    prevQ = Quaternionf(v.prevHeading->orientation.w,
-                        v.prevHeading->orientation.x,
-                        v.prevHeading->orientation.y,
-                        v.prevHeading->orientation.z);
-  }
-  // Iterate through each goal and calculate a score
-  for (int i = 0; i < openPoses->size(); i++) {
-    // Convert to quaternion
-    geometry_msgs::Pose * path = &openPoses->at(i);
-    Quaternionf pathQ (path->orientation.w, path->orientation.x,
-                       path->orientation.y, path->orientation.z);
-    // Calc each difference score
-    float prevDiff = pathQ.angularDistance(prevQ);
-    float goalDiff = pathQ.angularDistance(goalQ);
-    float headDiff = pathQ.angularDistance(v.orientation);
-    // Calc elevation of path
-    float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0];
-    // Weigh incline
-    float elScore = abs(el)*p.elevationWeight;
-    // Check bounds
-    if (el > v.maxIncline || el < v.minIncline)
-      elScore = 999;
-    vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore;
-  }
-  // Return best path
-  geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
-
-  //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
-  //                   bestPath->orientation.y, bestPath->orientation.z);
-  return bestPath;
-}
-
-void VFHistogram::binarize(int range) {
-  float val, tHighB, tLowB, tHigh, tLow, meanArea, ratio;
-  meanArea = getMeanArea();
-  tHighB = mean() + (range*std());
-  tLowB = mean() - (range*std());
-
-  //std::cout << "Thresholds: "<<tHighB << "---------------" << tLowB << std::endl;
-
-  for(int j=0; j<getHeight(); j++) {
-    //    ratio = primary.getArea(j) / meanArea;
-    ratio = 1;
-    //std::cout << "Ratio: "<<ratio << "----------------" << std::endl;
-    tLow = tLowB * ratio;
-    tHigh = tHighB * ratio;
-    for(int i = 0; i<getWidth(); i++) {
-      val = getValue(i, j);
-      if(val > tHigh)
-        setValue(i, j, 1.0);
-      else if(val < tLow)
-        setValue(i, j, 0.0);
-      else if(val == 0.0)
-        setValue(i, j, 0.0);
-      else if(val != val)
-        setValue(i, j, 1);
+  // Choose a path from a list of paths
+  geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle v, geometry_msgs::Pose goal, PathParams p, std::vector<geometry_msgs::Pose>* openPoses) {
+    // If no openPoses poses are found
+    if (openPoses->size() == 0) {
+      std::cout << "No open positions" << std::endl;
+      return NULL;
+    }
+    // Difference to goal
+    float vals[openPoses->size()];
+    float dx = goal.position.x - v.x;
+    float dy = goal.position.y - v.y;
+    float dz = goal.position.z - v.z;
+    // If we are at our goal
+    if (sqrt(abs(dx*dx+dy*dy+dz*dz)) < p.goal_radius) {
+      std::cout << "Reached Goal" << std::endl;
+      return NULL;
+    }
+    // Find angle to goal
+    std::cout << "Break 1" << std::endl;
+    Quaternionf goalQ =
+      AngleAxisf(atan2(dy, dx), Vector3f::UnitZ()) *
+      AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
+    // Calculate angle to previous path
+    std::cout << "Break 2" << std::endl;
+    Quaternionf prevQ;
+    
+    if (v.prevHeading != NULL && v.prevSet == true) {
+      prevQ = Quaternionf(v.prevHeading->orientation.w,
+          v.prevHeading->orientation.x,
+          v.prevHeading->orientation.y,
+          v.prevHeading->orientation.z);
+    }
+    std::cout << "Break 3" << std::endl;
+    // Iterate through each goal and calculate a score
+    for (int i = 0; i < openPoses->size(); i++) {
+      // Convert to quaternion
+      std::cout << "Break 4" <<" " <<i << std::endl;
+      geometry_msgs::Pose * path = &openPoses->at(i);
+      Quaternionf pathQ (path->orientation.w, path->orientation.x,
+          path->orientation.y, path->orientation.z);
+      // Calc each difference score
+      float prevDiff;
+      if(v.prevSet == true)
+        prevDiff = pathQ.angularDistance(prevQ);
       else
-        setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);
+        prevDiff = 0;
+      float goalDiff = pathQ.angularDistance(goalQ);
+      float headDiff = pathQ.angularDistance(v.orientation);
+      // Calc elevation of path
+      float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0];
+      // Weigh incline
+      float elScore = abs(el)*p.elevationWeight;
+      // Check bounds
+      if (el > v.maxIncline || el < v.minIncline)
+        elScore = 999;
+      vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore;
+    }
+    // Return best path
+    std::cout << "Break 5" << std::endl;
+    geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
+    v.prevSet = true;
+    v.prevHeading = bestPath;
+    std::cout << "Break 6" << std::endl;
+
+    //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
+    //                   bestPath->orientation.y, bestPath->orientation.z);
+    return bestPath;
+  }
+
+  void VFHistogram::binarize(int range) {
+    float val, tHighB, tLowB, tHigh, tLow, meanArea, ratio;
+    meanArea = getMeanArea();
+    tHighB = mean() + (range*std());
+    tLowB = mean() - (range*std());
+
+    std::cout << "Thresholds: "<<tHighB << "---------------" << tLowB << std::endl;
+
+    for(int j=0; j<getHeight(); j++) {
+      //    ratio = primary.getArea(j) / meanArea;
+      ratio = 1;
+      //std::cout << "Ratio: "<<ratio << "----------------" << std::endl;
+      tLow = tLowB * ratio;
+      tHigh = tHighB * ratio;
+      for(int i = 0; i<getWidth(); i++) {
+        val = getValue(i, j);
+        if(val > tHigh)
+          setValue(i, j, 1.0);
+        else if(val < tLow)
+          setValue(i, j, 0.0);
+        else if(val == 0.0)
+          setValue(i, j, 0.0);
+        else if(val != val)
+          setValue(i, j, 0.0);
+        else
+          setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);
+      }
     }
   }
-}
 
-bool VFHistogram::isIgnored(float x, float y, float z, float ws) {
-  float dist = sqrt(pow((x-ox), 2) +
-      pow((y-oy), 2) +
-      pow((z-oz), 2));
-  return dist > ws;
-}
+  bool VFHistogram::isIgnored(float x, float y, float z, float ws) {
+    float dist = sqrt(pow((x-ox), 2) +
+        pow((y-oy), 2) +
+        pow((z-oz), 2));
+    return dist > ws;
+  }

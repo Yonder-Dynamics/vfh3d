@@ -1,5 +1,5 @@
 <launch>
-  <node name="test_octomap" pkg="octomap_server" type="octomap_server_node" args="$(find vfh_rover)/fr_078_tidyup.bt">
+  <node name="test_octomap" pkg="octomap_server" type="octomap_server_node" args="$(find vfh_rover)/fr_079.bt">
     <param name="max_depth" value="13" />
   </node>
   <!--<node name="vfh" pkg="vfh_rover" type="vfh_rover_node"/> -->

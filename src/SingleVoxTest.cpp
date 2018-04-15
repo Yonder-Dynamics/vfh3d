@@ -13,15 +13,15 @@ RGBPointCloud::Ptr buildPC() {
   pcl::PointXYZRGB p;
   RGBPointCloud::Ptr pc (new RGBPointCloud);
 
-  for(float i=-50; i<50; i++) {
-    for(float j=-50; j<50; j++) {
-      for(float k=0; k<100; k++){
+  for(float i=-100; i<100; i++) {
+    for(float j=-100; j<100; j++) {
+     // for(float k=0; k<100; k++){
         p.x = i/30;
         p.y = j/30;
-        p.z = k/30;
+       // p.z = k/30;
 
         pc->points.push_back(p);
-      }
+     // }
     }
   }
 
@@ -37,7 +37,7 @@ void publishPC() {
   pcl::toROSMsg(*pc, pc_msg);
   pc_msg.header.frame_id = "map";
   ros::Rate loop(0.5);
-  for (int i = 0; i<10; i++) {
+  while(1) {
     pub.publish(pc_msg);
     loop.sleep();
   }

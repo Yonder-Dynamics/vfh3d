@@ -84,7 +84,7 @@ void OctomapProcessing::process() {
   // Disp next position
   geometry_msgs::PoseStamped p;
   PathParams params;
-  params.goalWeight = 1;
+  params.goalWeight = 5;
   params.prevWeight = 0;
   params.headingWeight = 0;
   params.goal_radius = 1;
@@ -95,5 +95,5 @@ void OctomapProcessing::process() {
   vehicle.prevHeading = next_pose;
   p.header.frame_id = "map";
   next_pose_pub.publish(p);
-  delete(h);
+  //delete(&h);
 }

@@ -15,7 +15,7 @@ class PolarHistogram {
   /** Constructor with width and height parameters **/
   PolarHistogram(float alpha, float ox, float oy, float oz);
 
-  ~Histogram() {
+  ~PolarHistogram() {
     delete(data);
   }
 

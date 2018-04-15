@@ -21,14 +21,15 @@ PolarHistogram::PolarHistogram(float alpha,
     data[i] = NAN;
   }
 }
-
+//Modified... Revert to the commented if problem occurs
 int PolarHistogram::getI(float x, float y) {
-  return modulus(floor(atan2(x-ox, y-oy)/alpha), getWidth());
+  //return modulus(floor(atan2(x-ox, y-oy)/alpha), getWidth());
+  return floor(atan2(x-ox, y-oy)/alpha);
 }
 
 int PolarHistogram::getJ(float x, float y, float z) {
   float p = sqrt(pow((x-ox), 2) + pow((y-oy), 2));
-  return (atan2(z-oz, p)+M_PI/2)/alpha;
+  return floor((atan2(z-oz, p)+M_PI/2)/alpha);
 }
 
 // j = 0 = top
@@ -129,7 +130,7 @@ float PolarHistogram::mean() {
   float sum = 0;
   int n = 0;
   for (int i = 0; i < getWidth()*getHeight(); i++) {
-    if (data[i] > 0) {
+    if (data[i] > 0 && data[i] == data[i]) {
       sum += data[i];
       n++;
     }
