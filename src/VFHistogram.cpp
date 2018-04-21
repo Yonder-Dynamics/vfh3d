@@ -13,7 +13,7 @@
 
 using namespace Eigen;
 
-VFHistogram::VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
+VFHistogram::VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle &v,
     float maxRange, float alpha) :
   PolarHistogram(alpha, v.x, v.y, v.z)
 {
@@ -77,7 +77,7 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
 }
 
 void VFHistogram::checkTurning(float x, float y, float z, float val,
-    Vehicle v, float voxel_radius) {
+    Vehicle &v, float voxel_radius) {
   // Iterate over half possible ways the rover can move (then check left and right
   int j = getJ(x,y,z);
   int i = getI(x,y);
@@ -140,7 +140,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
   }
 
   // Choose a path from a list of paths
-  geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle v, geometry_msgs::Pose goal, PathParams p, std::vector<geometry_msgs::Pose>* openPoses) {
+  geometry_msgs::Pose* VFHistogram::optimalPath(Vehicle &v, geometry_msgs::Pose goal, PathParams p, std::vector<geometry_msgs::Pose>* openPoses) {
     // If no openPoses poses are found
     if (openPoses->size() == 0) {
       std::cout << "No open positions" << std::endl;
@@ -152,7 +152,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
     float dy = goal.position.y - v.y;
     float dz = goal.position.z - v.z;
     // If we are at our goal
-    if (sqrt(abs(dx*dx+dy*dy+dz*dz)) < p.goal_radius) {
+    if (sqrt(fabs(dx*dx+dy*dy+dz*dz)) < p.goal_radius) {
       std::cout << "Reached Goal" << std::endl;
       return NULL;
     }
@@ -169,6 +169,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
           v.prevHeading->orientation.y,
           v.prevHeading->orientation.z);
     }
+    std::cout << "--------------------------" << std::endl;
     // Iterate through each goal and calculate a score
     for (int i = 0; i < openPoses->size(); i++) {
       // Convert to quaternion
@@ -177,27 +178,34 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
           path->orientation.y, path->orientation.z);
       // Calc each difference score
       float prevDiff;
-      if(v.prevSet == true)
+      if(v.prevSet)
         prevDiff = pathQ.angularDistance(prevQ);
       else
         prevDiff = 0;
       float goalDiff = pathQ.angularDistance(goalQ);
       float headDiff = pathQ.angularDistance(v.orientation);
       // Calc elevation of path
-      float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0];
-      std::cout <<"Elevation: " <<el << std::endl;
+      float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[1];
+      /*std::cout << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[2] << "++++++++++" << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[1] << "+++++++++++++" << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0] << std::endl;*/
       // Weigh incline
-      float elScore = ((M_PI/2) - el)*p.elevationWeight;
+      float elScore = (fabs((M_PI) - el));
+      //std::cout << elScore << std::endl;
       // Check bounds
       //if (el > v.maxIncline || el < v.minIncline)
         //elScore = 999;
-      vals[i] = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - abs(elScore);
+      
+      float totalScore = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore*p.elevationWeight;
+      //std::cout << totalScore << "---------" << 
+       // el <<"-------------" <<fabs((M_PI/2.0) - el) << "--------" << elScore<< std::endl;
+      vals[i] = totalScore;
     }
     // Return best path
     geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
-    v.prevSet = true;
-    v.prevHeading = bestPath;
-
+    std::cout << "HERE ------------------------" << std::endl; 
+      Quaternionf printPath (bestPath->orientation.w, bestPath->orientation.x,
+          bestPath->orientation.y, bestPath->orientation.z);
+      std::cout << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[2] << "++++++++++" << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[1] << "+++++++++++++" << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[0] << std::endl;
+      // Weigh incline
     //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
     //                   bestPath->orientation.y, bestPath->orientation.z);
     return bestPath;
@@ -228,7 +236,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
         else if(val != val)
           setValue(i, j, 0.0);
         else
-          setValue(i, j, (abs(val-tLow) < abs(val-tHigh)) ? 0 : 1);
+          setValue(i, j, (fabs(val-tLow) < fabs(val-tHigh)) ? 0 : 1);
       }
     }
   }

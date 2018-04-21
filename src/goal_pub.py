@@ -5,7 +5,7 @@ from geometry_msgs.msg import PoseStamped
 def init():
     rospy.init_node("goal_pub", anonymous=True)
     pub = rospy.Publisher("/goal", PoseStamped, queue_size=10)
-    rate = rospy.Rate(1)
+    rate = rospy.Rate(2)
     goal = PoseStamped()
     goal.pose.position.x = 30
     goal.pose.position.y = 0

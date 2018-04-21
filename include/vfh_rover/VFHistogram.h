@@ -15,7 +15,7 @@ typedef pcl::PointCloud<pcl::PointXYZRGB> RGBPointCloud;
 class VFHistogram : public PolarHistogram {
  public:
   /** Constructor with width and height parameters **/
-  VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle v,
+  VFHistogram(boost::shared_ptr<octomap::OcTree> tree, Vehicle &v,
               float maxRange, float alpha);
   bool isIgnored(float x, float y, float z, float ws);
   float getArea(int elevation);
@@ -24,9 +24,9 @@ class VFHistogram : public PolarHistogram {
                 float voxel_radius, float maxRange);
   void addVoxel(float x, float y, float z, float val);
   void checkTurning(float x, float y, float z, float val,
-                    Vehicle v, float voxel_radius);
+                    Vehicle &v, float voxel_radius);
   void binarize(int range);
   std::vector<geometry_msgs::Pose> findPaths(int width, int height);
-  geometry_msgs::Pose* optimalPath(Vehicle v, geometry_msgs::Pose goal,
+  geometry_msgs::Pose* optimalPath(Vehicle &v, geometry_msgs::Pose goal,
                                    PathParams p, std::vector<geometry_msgs::Pose>* openPoses);
 };

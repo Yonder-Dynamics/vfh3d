@@ -15,7 +15,7 @@
 bool HAS_PROC = false; // temp var, only process once. For debugging
 static int COUNT = 0;
 
-OctomapProcessing::OctomapProcessing(float alpha, Vehicle v,
+OctomapProcessing::OctomapProcessing(float alpha, Vehicle &v,
     float maxRange, ros::NodeHandle n) :
   vehicle(v), maxRange(maxRange), gotGoal(false), gotOcto(false), alpha(alpha)
 {
@@ -28,13 +28,16 @@ void OctomapProcessing::poseCallback(const geometry_msgs::PoseStamped::ConstPtr&
   vehicle.setPose(msg->pose);
 }
 
+
 void OctomapProcessing::goalCallback(const geometry_msgs::PoseStamped::ConstPtr& msg) {
   goal = msg->pose;
   gotGoal = true;
   if (not HAS_PROC && gotOcto) {
     process();
   }
+
 }
+
 
 void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& msg) {
   octomap::AbstractOcTree* atree = octomap_msgs::msgToMap(*msg);
@@ -46,14 +49,14 @@ void OctomapProcessing::octomapCallback(const octomap_msgs::Octomap::ConstPtr& m
   delete(atree);
 }
 
-void OctomapProcessing::simulate() {
+/*void OctomapProcessing::simulate() {
   HAS_PROC = true;
   for (float x=-5; x<15; x+=0.5) {
     //vehicle.x = x;
     process();
-    usleep(1000*1000*1000);
+    usleep(1000*1000*1000*1000*1000);
   }
-}
+}*/
 
 void OctomapProcessing::process() {
   // Build
@@ -62,11 +65,11 @@ void OctomapProcessing::process() {
   h.binarize(1);
 
   COUNT++;
-  if(COUNT == 20)
+  /*if(COUNT == 20)
     exit(0);
   // Disp string
   // Disp histogram point cloud
-
+*/
   RGBPointCloud::Ptr pc = h.displayCloud(1);
   sensor_msgs::PointCloud2 pc_msg;
   pcl::toROSMsg(*pc, pc_msg);
@@ -84,16 +87,17 @@ void OctomapProcessing::process() {
   // Disp next position
   geometry_msgs::PoseStamped p;
   PathParams params;
-  params.goalWeight = 6;
-  params.prevWeight = 1;
-  params.headingWeight = 1;
-  params.elevationWeight = 5;
+  params.goalWeight = 10;
+  params.prevWeight = 8;
+  params.headingWeight = 0;
+  params.elevationWeight = 10;
   params.goal_radius = 1;
   geometry_msgs::Pose* next_pose = h.optimalPath(vehicle, goal, params, &pa.poses);
   if (next_pose == NULL)
     return;
   p.pose = *next_pose;
   vehicle.prevHeading = next_pose;
+  vehicle.prevSet = true;
   p.header.frame_id = "map";
   next_pose_pub.publish(p);
   //delete(&h);
