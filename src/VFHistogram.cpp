@@ -70,6 +70,7 @@ void VFHistogram::addVoxel(float x, float y, float z, float val,
 
   int bz = getI(x, y);
   int be = getJ(x, y, z);
+  std::cout << be << std::endl;
   int voxelCellSize = int(enlargement/alpha); // divided by 2
   int az,el;
   addValues(h, bz-voxelCellSize, be-voxelCellSize,
@@ -114,6 +115,7 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       if (empty) {
         az = -(i+(float)width/2-getWidth()/4)*alpha;
         el = M_PI/2-(j+(float)height/2-1)*alpha;
+
         geometry_msgs::Pose p;
         // Conversion to quaternion ripped from wikipedia
         // Abbreviations for the various angular functions
@@ -162,14 +164,14 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       AngleAxisf(-atan2(dz, dx), Vector3f::UnitY());
     // Calculate angle to previous path
     Quaternionf prevQ;
-    
+
     if (v.prevHeading != NULL && v.prevSet == true) {
       prevQ = Quaternionf(v.prevHeading->orientation.w,
           v.prevHeading->orientation.x,
           v.prevHeading->orientation.y,
           v.prevHeading->orientation.z);
     }
-    std::cout << "--------------------------" << std::endl;
+    // std::cout << "--------------------------" << std::endl;
     // Iterate through each goal and calculate a score
     for (int i = 0; i < openPoses->size(); i++) {
       // Convert to quaternion
@@ -186,26 +188,22 @@ std::vector<geometry_msgs::Pose> VFHistogram::findPaths(int width, int height) {
       float headDiff = pathQ.angularDistance(v.orientation);
       // Calc elevation of path
       float el = pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[1];
-      /*std::cout << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[2] << "++++++++++" << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[1] << "+++++++++++++" << pathQ.toRotationMatrix().eulerAngles(2, 1, 0)[0] << std::endl;*/
       // Weigh incline
-      float elScore = (fabs((M_PI) - el));
-      //std::cout << elScore << std::endl;
+      float elScore = (fabs((M_PI/2 - fabs(el))) < 1.5 ? 10000000 : 1) * ((M_PI-fabs(el)) > (fabs(el)) ? fabs(el) : (M_PI - fabs(el)));
       // Check bounds
-      //if (el > v.maxIncline || el < v.minIncline)
-        //elScore = 999;
-      
+      //if(el > 0)
+      //std::cout << el << std::endl;
+      /*if(fabs(M_PI/2 - el) < 0.8)
+        exit(0);*/
+
       float totalScore = - prevDiff*p.prevWeight - goalDiff*p.goalWeight - headDiff*p.headingWeight - elScore*p.elevationWeight;
-      //std::cout << totalScore << "---------" << 
-       // el <<"-------------" <<fabs((M_PI/2.0) - el) << "--------" << elScore<< std::endl;
       vals[i] = totalScore;
     }
     // Return best path
     geometry_msgs::Pose* bestPath = &openPoses->at(maxInd(vals, openPoses->size()));
-    std::cout << "HERE ------------------------" << std::endl; 
-      Quaternionf printPath (bestPath->orientation.w, bestPath->orientation.x,
-          bestPath->orientation.y, bestPath->orientation.z);
-      std::cout << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[2] << "++++++++++" << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[1] << "+++++++++++++" << printPath.toRotationMatrix().eulerAngles(2, 1, 0)[0] << std::endl;
-      // Weigh incline
+    Quaternionf printPath (bestPath->orientation.w, bestPath->orientation.x,
+        bestPath->orientation.y, bestPath->orientation.z);
+    // Weigh incline
     //Quaternionf pathQ (bestPath->orientation.w, bestPath->orientation.x,
     //                   bestPath->orientation.y, bestPath->orientation.z);
     return bestPath;

@@ -16,6 +16,7 @@ def init():
         nextPose.pose.position.x = msg.pose.position.x + diff[0]
         nextPose.pose.position.y = msg.pose.position.y + diff[1]
         nextPose.pose.position.z = msg.pose.position.z + diff[2]
+        #nextPose.pose.position.z = msg.pose.position.z
         nextPose.pose.orientation = msg.pose.orientation
         nextPose.header.frame_id = "map"
         rospy.loginfo(nextPose)
